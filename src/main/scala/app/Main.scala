@@ -15,14 +15,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.alexn.vdp
+package app
 
+import app.utils.{Logger, MonixIntegration}
 import cats.effect.ExitCode
 import com.twitter.finagle.Http
 import com.twitter.util.Time
 import io.finch._
 import monix.eval.{Task, TaskApp}
-import org.alexn.vdp.utils.{Logger, MonixIntegration}
+import org.alexn.vdp.utils.Logger
 
 object Main extends TaskApp with MonixIntegration with Logger {
 

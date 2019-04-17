@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.alexn.vdp.utils
+package app.utils
 
 import org.slf4j
 import org.slf4j.LoggerFactory

@@ -15,29 +15,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.alexn.vdp.models
+package app.models
 
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 
-/**
-  * https://player.vimeo.com/video/300015010/config
-  */
 @ConfiguredJsonCodec
-final case class VideoConfigJSON(
-  @JsonKey("video") video: VideoInfoJSON
+final case class RawFileJSON(
+  @JsonKey("width") width: Option[Int],
+  @JsonKey("height") height: Option[Int],
+  @JsonKey("size") size: Option[String],
+  @JsonKey("public_name") publicName: String,
+  @JsonKey("extension") extension: String,
+  @JsonKey("download_name") downloadName: String,
+  @JsonKey("download_url") downloadURL: String,
+  @JsonKey("is_cold") isCold: Option[Boolean],
+  @JsonKey("is_defrosting") isDefrosting: Option[Boolean],
+  @JsonKey("range") range: Option[String]
 )
 
 @ConfiguredJsonCodec
-final case class VideoInfoJSON(
-  @JsonKey("title") title: Option[String],
-  @JsonKey("url") url: Option[String],
-  @JsonKey("thumbs") thumbs: VideoThumbsJSON
-)
-
-@ConfiguredJsonCodec
-final case class VideoThumbsJSON(
-  @JsonKey("base") base: Option[String],
-  @JsonKey("1280") image1280: Option[String],
-  @JsonKey("960") image960: Option[String],
-  @JsonKey("640") image640: Option[String]
+final case class DownloadLinksJSON(
+  @JsonKey("allow_downloads") allowDownloads: Boolean,
+  @JsonKey("files") files: List[RawFileJSON],
+  @JsonKey("source_file") sourceFile: Option[RawFileJSON]
 )

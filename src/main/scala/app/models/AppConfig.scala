@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.alexn.vdp.models
+package app.models
 
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}

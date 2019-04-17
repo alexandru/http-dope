@@ -15,14 +15,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.alexn.vdp
+package app.models
 
-import io.circe.generic.extras.Configuration
+import io.circe.syntax._
+import io.circe.{Decoder, Encoder}
 
-package object models {
+/**
+  * Represents either an IPv4 or an IPv6 address.
+  */
+final case class IP(address: String)
+
+object IP {
   /**
-    * Docs: https://circe.github.io/circe/codecs/custom-codecs.html
+    * Explicit JSON encoder for this ADT, see
+    * [[https://circe.github.io/circe/codecs/adt.html the docs]]
     */
-  implicit val config: Configuration =
-    Configuration.default
+  implicit val encodeJSON: Encoder[IP] =
+    Encoder.instance(_.address.asJson)
+
+  /**
+    * Explicit JSON decoder for this ADT, see
+    * [[https://circe.github.io/circe/codecs/adt.html the docs]]
+    */
+  implicit val decodeJSON: Decoder[IP] =
+    Decoder[String].map(IP(_))
 }
