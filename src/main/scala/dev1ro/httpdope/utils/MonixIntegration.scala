@@ -21,5 +21,3 @@ import io.finch.EndpointModule
 import monix.eval.Task
 
 trait MonixIntegration extends EndpointModule[Task]
-
-object MonixIntegration extends MonixIntegration
