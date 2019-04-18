@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package app.models
+package dev1ro.httpdope.models
 
 import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}

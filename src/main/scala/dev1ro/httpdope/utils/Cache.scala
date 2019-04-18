@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package app.utils
+package dev1ro.httpdope.utils
 
 import cats.effect.concurrent.Deferred
 import monix.eval.Task

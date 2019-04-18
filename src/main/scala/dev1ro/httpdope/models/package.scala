@@ -15,11 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package app.utils
+package dev1ro.httpdope
 
-import org.slf4j
-import org.slf4j.LoggerFactory
+import io.circe.generic.extras.Configuration
 
-trait Logger {
-  protected lazy val logger: slf4j.Logger = LoggerFactory.getLogger(getClass)
+package object models {
+  /**
+    * Docs: https://circe.github.io/circe/codecs/custom-codecs.html
+    */
+  implicit val config: Configuration =
+    Configuration.default
 }

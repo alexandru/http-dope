@@ -15,14 +15,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package app
+package dev1ro.httpdope.utils
 
-import io.circe.generic.extras.Configuration
+import io.finch.EndpointModule
+import monix.eval.Task
 
-package object models {
-  /**
-    * Docs: https://circe.github.io/circe/codecs/custom-codecs.html
-    */
-  implicit val config: Configuration =
-    Configuration.default
-}
+trait MonixIntegration extends EndpointModule[Task]
+
+object MonixIntegration extends MonixIntegration

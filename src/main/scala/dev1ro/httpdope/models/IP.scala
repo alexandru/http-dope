@@ -15,29 +15,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package app.models
+package dev1ro.httpdope.models
 
-import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
+import io.circe.syntax._
+import io.circe.{Decoder, Encoder}
 
 /**
-  * https://player.vimeo.com/video/300015010/config
+  * Represents either an IPv4 or an IPv6 address.
   */
-@ConfiguredJsonCodec
-final case class VideoConfigJSON(
-  @JsonKey("video") video: VideoInfoJSON
-)
+final case class IP(address: String)
 
-@ConfiguredJsonCodec
-final case class VideoInfoJSON(
-  @JsonKey("title") title: Option[String],
-  @JsonKey("url") url: Option[String],
-  @JsonKey("thumbs") thumbs: VideoThumbsJSON
-)
+object IP {
+  /**
+    * Explicit JSON encoder for this ADT, see
+    * [[https://circe.github.io/circe/codecs/adt.html the docs]]
+    */
+  implicit val encodeJSON: Encoder[IP] =
+    Encoder.instance(_.address.asJson)
 
-@ConfiguredJsonCodec
-final case class VideoThumbsJSON(
-  @JsonKey("base") base: Option[String],
-  @JsonKey("1280") image1280: Option[String],
-  @JsonKey("960") image960: Option[String],
-  @JsonKey("640") image640: Option[String]
-)
+  /**
+    * Explicit JSON decoder for this ADT, see
+    * [[https://circe.github.io/circe/codecs/adt.html the docs]]
+    */
+  implicit val decodeJSON: Decoder[IP] =
+    Decoder[String].map(IP(_))
+}
