@@ -19,43 +19,38 @@ package org.alexn.httpdope
 import cats.effect.ExitCode
 import cats.implicits._
 import monix.eval._
-
-import cats.effect.{ConcurrentEffect, Timer, Sync}
+import cats.effect.{ConcurrentEffect, Timer}
 import fs2.Stream
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.alexn.httpdope.config.AppConfig
+import org.alexn.httpdope.utils._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.server.middleware.Logger
-import scala.concurrent.ExecutionContext.global
+import org.http4s.server.middleware.{AutoSlash, Logger}
 
 object Server {
 
-  def getPort[F[_]: Sync]: F[Int] =
-    Sync[F].delay {
-      Option(System.getProperty("http.port"))
-        .orElse(Option(System.getenv("PORT")))
-        .map(_.toInt)
-        .getOrElse(8080)
-    }
-
   def stream[F[_]: ConcurrentEffect](implicit T: Timer[F]): Stream[F, Nothing] = {
     for {
-      _ <- BlazeClientBuilder[F](global).stream
+      config <- Stream.eval(AppConfig.loadFromEnv[F])
+      //httpClient <- BlazeClientBuilder[F](global).stream
 
-      // Combine Service Routes into an HttpApp.
-      // Can also be done via a Router if you
-      // want to extract a segments not checked
-      // in the underlying routes.
-      httpApp = (
+      allRoutes = (
         echo.Routes[F].staticRoutes
-      ).orNotFound
+      )
 
-      // With Middlewares in place
-      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
+      // With all middleware
+      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(
+        CanonicalRedirectMiddleware(config.httpServer)(
+          HttpsRedirect(config.httpServer)(
+            AutoSlash(
+              CORSMiddleware(
+                allRoutes
+              ))))
+          .orNotFound
+      )
 
-      port <- Stream.eval(getPort[F])
       exitCode <- BlazeServerBuilder[F]
-        .bindHttp(port, "0.0.0.0")
+        .bindHttp(config.httpServer.port.value, config.httpServer.address.value)
         .withHttpApp(finalHttpApp)
         .serve
     } yield exitCode
