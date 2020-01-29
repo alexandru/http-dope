@@ -28,7 +28,8 @@ lazy val root = (project in file("."))
     startYear := Some(2020),
     licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
 
-    herokuAppName in Compile := "http-dope"
+    herokuAppName in Compile := "http-dope",
+    herokuJdkVersion in Compile := "11"
   )
 
 // Reloads build.sbt changes whenever detected
