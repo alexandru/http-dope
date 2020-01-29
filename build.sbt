@@ -5,6 +5,7 @@ val LogbackVersion  = "1.2.3"
 val MonixVersion    = "3.1.0"
 
 lazy val root = (project in file("."))
+  .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
     organization := "org.alexn",
