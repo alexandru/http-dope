@@ -20,7 +20,7 @@ import cats.Applicative
 import cats.data.Kleisli
 import cats.implicits._
 import org.alexn.httpdope.config.HttpServerConfig
-import org.http4s.Status.MovedPermanently
+import org.http4s.Status.Found
 import org.http4s.Uri.{Authority, RegName, Scheme}
 import org.http4s.headers.{Host, Location, `Content-Type`}
 import org.http4s.{Headers, Http, MediaType, Response}
@@ -42,7 +42,7 @@ object CanonicalRedirectMiddleware {
 
             logger.debug(s"Redirecting to ${location.renderString}")
             val headers = Headers(Location(location) :: `Content-Type`(MediaType.text.xml) :: Nil)
-            val response = Response[G](status = MovedPermanently, headers = headers)
+            val response = Response[G](status = Found, headers = headers)
             response.pure[F]
 
           case _ =>
