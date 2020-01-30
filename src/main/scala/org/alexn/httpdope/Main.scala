@@ -16,37 +16,25 @@
 
 package org.alexn.httpdope
 
-import cats.effect.{Blocker, ConcurrentEffect, ContextShift, ExitCode, Resource, Sync, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, Timer}
 import cats.implicits._
-import monix.eval._
 import fs2.Stream
+import monix.eval._
 import monix.execution.Scheduler
 import org.alexn.httpdope.config.AppConfig
 import org.alexn.httpdope.utils._
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{AutoSlash, Logger}
 
-import concurrent.duration._
-
 object Server {
 
-  def createBlockingContext[F[_]](implicit F: Sync[F]) =
-    Resource(F.delay {
-      val sc = Scheduler.io("blocking")
-      val blocker = Blocker.liftExecutionContext(sc)
-      ((sc, blocker), F.delay {
-        sc.shutdown()
-        sc.awaitTermination(10.seconds)
-        ()
-      })
-    })
-
-  def stream[F[_]](implicit F: ConcurrentEffect[F], T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+  def stream[F[_]](implicit F: ConcurrentEffect[F], T: Timer[F], C: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
     for {
       config <- Stream.eval(AppConfig.loadFromEnv[F])
-      //httpClient <- BlazeClientBuilder[F](global).stream
-      (_, blocker) <- Stream.resource(createBlockingContext)
+      (_, blocker) <- Stream.resource(Schedulers.createBlockingContext())
+      _ <- BlazeClientBuilder[F](global).stream
 
       allRoutes = (
         static.Routes[F](blocker).staticRoutes
@@ -72,6 +60,8 @@ object Server {
 }
 
 object Main extends TaskApp {
-  def run(args: List[String]) =
+  def run(args: List[String]) = {
+    implicit val ec = scheduler
     Server.stream[Task].compile.drain.as(ExitCode.Success)
+  }
 }
