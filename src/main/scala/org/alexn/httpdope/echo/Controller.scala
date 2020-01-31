@@ -16,30 +16,94 @@
 
 package org.alexn.httpdope.echo
 
-import cats.effect.Sync
-import com.github.ghik.silencer.silent
-import org.http4s.dsl.Http4sDsl
+import cats.effect.{Sync, Timer}
+import cats.implicits._
+import org.alexn.httpdope.utils.{BaseController, RequestUtils}
 import org.http4s.{HttpRoutes, Request, Response}
+import scala.concurrent.duration._
 
-final class Controller[F[_]](@silent geoIP: MaxmindGeoIPService[F])(implicit F: Sync[F]) {
-  val dsl = new Http4sDsl[F] {}
-  import dsl._
+final class Controller[F[_]](geoIP: MaxmindGeoIPService[F])
+  (implicit F: Sync[F], timer: Timer[F])
+  extends BaseController[F] {
 
   def routes =
     HttpRoutes.of[F] {
       case request @ GET -> Root / "ip" =>
         getIP(request)
+
+      case request @ GET -> Root / "all" =>
+        getAll(request)
+
+      case request @ GET -> Root / "ip" =>
+        getIP(request)
+
+      case request @ GET -> Root / "geoip" =>
+        getGeoIP(request)
+
+      case GET -> Root / "timeout" / Duration(d, unit)  =>
+        val timespan = FiniteDuration(d, unit)
+        simulateTimeout(timespan)
     }
+
+  def getAll(request: Request[F]): F[Response[F]] = {
+    F.suspend {
+      val ip = extractIPFromRequest(request)
+      ip.fold(F.pure(Option.empty[GeoIPInfo]))(geoIP.findIP).flatMap { ipInfo =>
+
+        val headers = request.headers.toList.map { h =>
+          (h.name.value, h.value)
+        }
+
+        Ok(RequestInfo(
+          user = RequestUserInfo(
+            ip = ip.map(IP(_)),
+            forwardedFor = RequestUtils.getHeader(request, "X-Forwarded-For"),
+            via = RequestUtils.getHeader(request, "Via"),
+            agent = RequestUtils.getHeader(request, "User-Agent"),
+            geoip = ipInfo
+          ),
+          headers = headers
+        ))
+      }
+    }
+  }
 
   def getIP(request: Request[F]): F[Response[F]] =
     IPUtils.extractClientIP(request) match {
       case Some(ip) => Ok(ip)
       case None => NoContent()
     }
+
+  def getGeoIP(request: Request[F]): F[Response[F]] = {
+    F.suspend {
+      val ip = extractIPFromRequest(request)
+      ip.fold(F.pure(Option.empty[GeoIPInfo]))(geoIP.findIP).flatMap {
+        case None =>
+          notFound("ip", ip)
+        case Some(info) =>
+          Ok(info)
+      }
+    }
+  }
+
+  def simulateTimeout(ts: FiniteDuration): F[Response[F]] = {
+    for {
+      start <- timer.clock.monotonic(MILLISECONDS)
+      _ <- timer.sleep(ts)
+      now <- timer.clock.monotonic(MILLISECONDS)
+      r <- timeout("sleptMillis", Some(now - start))
+    } yield r
+  }
+
+  private def extractIPFromRequest(request: Request[F]) =
+    request.params.get("ip") match {
+      case ip@Some(value) if IPUtils.isPublicIP(value) => ip
+      case _ => IPUtils.extractClientIP(request)
+    }
 }
 
 object Controller {
   /** Builder. */
-  def apply[F[_]](geoIP: MaxmindGeoIPService[F])(implicit F: Sync[F]): Controller[F] =
+  def apply[F[_]](geoIP: MaxmindGeoIPService[F])(implicit F: Sync[F], timer: Timer[F]): Controller[F] =
     new Controller(geoIP)
 }
