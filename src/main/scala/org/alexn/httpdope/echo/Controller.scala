@@ -55,14 +55,14 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F])
         }
 
         Ok(RequestInfo(
-          user = RequestUserInfo(
-            ip = ip.map(IP(_)),
+          request = ParsedRequest(
+            detectedIP = IPUtils.extractClientIP(request).map(IP(_)),
             forwardedFor = RequestUtils.getHeader(request, "X-Forwarded-For"),
             via = RequestUtils.getHeader(request, "Via"),
             agent = RequestUtils.getHeader(request, "User-Agent"),
-            geoip = ipInfo
+            headers = headers
           ),
-          headers = headers
+          geoip = ipInfo
         ))
       }
     }

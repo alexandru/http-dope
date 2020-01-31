@@ -20,15 +20,15 @@ import io.circe.generic.JsonCodec
 
 @JsonCodec
 final case class RequestInfo(
-  user: RequestUserInfo,
-  headers: List[(String, String)]
+  geoip: Option[GeoIPInfo],
+  request: ParsedRequest
 )
 
 @JsonCodec
-final case class RequestUserInfo(
-  ip: Option[IP],
+final case class ParsedRequest(
+  detectedIP: Option[IP],
   forwardedFor: Option[String],
   via: Option[String],
   agent: Option[String],
-  geoip: Option[GeoIPInfo]
+  headers: List[(String, String)],
 )
