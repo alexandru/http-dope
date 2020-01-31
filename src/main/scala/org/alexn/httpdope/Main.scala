@@ -22,9 +22,11 @@ import fs2.Stream
 import monix.eval._
 import monix.execution.Scheduler
 import org.alexn.httpdope.config.AppConfig
+import org.alexn.httpdope.echo.MaxmindGeoIPService
 import org.alexn.httpdope.utils._
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
+import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{AutoSlash, Logger}
 
@@ -34,10 +36,13 @@ object Server {
     for {
       config <- Stream.eval(AppConfig.loadFromEnv[F])
       (_, blocker) <- Stream.resource(Schedulers.createBlockingContext())
-      _ <- BlazeClientBuilder[F](global).stream
+      blazeClient <- BlazeClientBuilder[F](global).stream
+      httpClient = HTTPClient(blazeClient, blocker)
+      geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
 
-      allRoutes = (
-        static.Routes[F](blocker).staticRoutes
+      allRoutes = Router(
+        "/" -> static.Controller[F](blocker).routes,
+        "/echo" -> echo.Controller[F](geoIP).routes
       )
 
       // With all middleware

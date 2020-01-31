@@ -19,6 +19,7 @@ package org.alexn.httpdope.echo
 import cats.implicits._
 import java.io.FileNotFoundException
 import java.net.InetAddress
+import java.util.zip.GZIPInputStream
 
 import com.maxmind.geoip2.record._
 import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource}
@@ -122,23 +123,59 @@ final class MaxmindGeoIPService[F[_]] private (db: DatabaseReader, blocker: Bloc
 }
 
 object MaxmindGeoIPService extends LazyLogging {
-
-
+  /**
+    * Builder that can build the service with a fresh download of the Maxmind database.
+    *
+    * (if configured as such in [[MaxmindGeoIPConfig]])
+    */
   def apply[F[_]](config: MaxmindGeoIPConfig, client: HTTPClient[F], blocker: Blocker)
     (implicit F: Async[F], cs: ContextShift[F]): Resource[F, MaxmindGeoIPService[F]] = {
 
-    val url = downloadURL(config)
-    val files = FileUtils(blocker)
+    if (!config.refreshDBOnRun) {
+      if (getClass.getResource(localResource) != null) {
+        fromLocalResource(blocker)
+      } else {
+        Resource.liftF(F.delay {
+          logger.warn(s"Local Maxmind DB doesn't exist ($localResource), retrying live")
+        }).flatMap { _ =>
+          // Retry
+          apply(config.copy(refreshDBOnRun = true), client, blocker)
+        }
+      }
+    } else {
+      val url = downloadURL(config)
+      val files = FileUtils(blocker)
 
+      val resource = for {
+        _ <- Resource.liftF(F.delay { logger.info(s"Downloading database: ${config.edition}")})
+        tarFile <- client.downloadFileFromURL(url, config.edition.id, ".tar.gz")
+        _ <- Resource.liftF(F.delay { logger.info(s"Extracting database file ${tarFile.getName}")})
+        dbFile <- files.extractFileFromTarFile("^.*\\.mmdb$".r, tarFile)
+      } yield {
+        logger.info("Database available, initiating MaxmindGeoIPService")
+        val file = dbFile.getOrElse(throw new FileNotFoundException(".mmdb database"))
+        val db = new DatabaseReader.Builder(file).build()
+        new MaxmindGeoIPService[F](db, blocker)
+      }
+
+      resource.handleErrorWith { error =>
+        logger.error(error)("Could not initialize Maxmind DB from URL")
+        fromLocalResource(blocker)
+      }
+    }
+  }
+
+  def fromLocalResource[F[_]](blocker: Blocker)
+    (implicit F: Async[F], cs: ContextShift[F]): Resource[F, MaxmindGeoIPService[F]] = {
+
+    val res = F.delay {
+      logger.info(s"Initializing Maxmind DB from local resource $localResource")
+      new GZIPInputStream(getClass.getResourceAsStream(localResource))
+    }
     for {
-      _ <- Resource.liftF(F.delay { logger.info(s"Downloading database: ${config.edition}")})
-      tarFile <- client.downloadFileFromURL(url, config.edition.id, ".tar.gz")
-      _ <- Resource.liftF(F.delay { logger.info(s"Extracting database file ${tarFile.getName}")})
-      dbFile <- files.extractFileFromTarFile("^.*\\.mmdb$".r, tarFile)
+      in <- Resource.fromAutoCloseable(res)
     } yield {
-      logger.info("Database available, initiating MaxmindGeoIPService")
-      val file = dbFile.getOrElse(throw new FileNotFoundException(".mmdb database"))
-      val db = new DatabaseReader.Builder(file).build()
+      val db = new DatabaseReader.Builder(in).build()
       new MaxmindGeoIPService[F](db, blocker)
     }
   }
@@ -146,12 +183,14 @@ object MaxmindGeoIPService extends LazyLogging {
   /**
     * Creates a test instance, for playing around in the console.
     */
-  def test[F[_]](implicit F: ConcurrentEffect[F], cs: ContextShift[F]): Resource[F, MaxmindGeoIPService[F]] = {
+  def test[F[_]](config: Option[AppConfig])
+    (implicit F: ConcurrentEffect[F], cs: ContextShift[F]): Resource[F, MaxmindGeoIPService[F]] = {
+
     import monix.execution.Scheduler.global
     for {
       (_, blocker) <- Schedulers.createBlockingContext[F]()
       client <- BlazeClientBuilder[F](global).resource
-      config <- Resource.liftF(AppConfig.loadFromEnv)
+      config <- Resource.liftF(config.fold(AppConfig.loadFromEnv)(F.pure))
       httpClient = HTTPClient(client, blocker)
       ref <- apply(config.maxmindGeoIP, httpClient, blocker)
     } yield {
@@ -159,6 +198,7 @@ object MaxmindGeoIPService extends LazyLogging {
     }
   }
 
+  private def localResource = "/maxmind.mmdb.gz"
   private def downloadURL(cfg: MaxmindGeoIPConfig): String =
     s"https://download.maxmind.com/app/geoip_download?edition_id=${cfg.edition.id}&license_key=${cfg.apiKey.value}&suffix=tar.gz"
 }

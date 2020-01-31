@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope.echo
+package org.alexn.httpdope.utils
 
-final case class MaxmindGeoIPConfig(
-  apiKey: MaxmindLicenceKey,
-  edition: MaxmindEdition,
-  refreshDBOnRun: Boolean
-)
+import org.http4s.Request
+import org.http4s.util.CaseInsensitiveString
+
+object RequestUtils {
+  /**
+    * Fetch a header from the request.
+    */
+  def getHeader[F[_]](request: Request[F], name: String): Option[String] = {
+    request.headers.get(CaseInsensitiveString(name)).map(_.value)
+  }
+}

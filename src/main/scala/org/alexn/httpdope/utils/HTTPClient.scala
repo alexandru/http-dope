@@ -25,7 +25,8 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import monix.execution.Scheduler
 
 final class HTTPClient[F[_]] private (client: Client[F], blocker: Blocker)
-  (implicit F: Concurrent[F], cs: ContextShift[F]) {
+  (implicit F: Concurrent[F], cs: ContextShift[F])
+  extends LazyLogging {
 
   /**
     * Downloads a binary file from a given URL.
@@ -36,6 +37,7 @@ final class HTTPClient[F[_]] private (client: Client[F], blocker: Blocker)
     tmpFileSuffix: String): Resource[F, File] = {
 
     Resource(F.suspend {
+      logger.debug(s"Downloading file at URL: $url")
       val file = File.createTempFile(tmpFilePrefix, tmpFileSuffix)
       file.deleteOnExit()
       implicit val enc = EntityDecoder.binFile(file, blocker)

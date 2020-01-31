@@ -20,41 +20,41 @@ import cats.effect.{Blocker, ContextShift, Sync}
 import org.http4s.{HttpRoutes, Request, Response, StaticFile}
 import org.http4s.dsl.Http4sDsl
 
-final class Routes[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) {
+final class Controller[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) {
   val dsl = new Http4sDsl[F] {}
   import dsl._
 
-  def staticRoutes =
+  def routes =
     HttpRoutes.of[F] {
-      case GET -> Root =>
-        Ok("Hello!")
+      case request @ GET -> Root =>
+        serveStaticFile("index.html", request)
 
       case GET -> Root / "hello" / name =>
         Ok(s"Hello, ${name.capitalize}!")
 
       case request @ GET -> Root / "favicon.ico" =>
-        serveStaticFile("favicon.ico", request)
+        serveStaticFile("images/favicon.ico", request)
 
-      case request @ GET -> "assets" /: ValidPath(path) =>
+      case request @ GET -> "public" /: ValidPath(path) =>
         serveStaticFile(path, request)
     }
 
   def serveStaticFile(resourcePath: String, r: Request[F]) =
-    StaticFile.fromResource(s"/assets/${resourcePath}", blocker, Some(r))
+    StaticFile.fromResource(s"/public/${resourcePath}", blocker, Some(r))
       .getOrElse(Response.notFound)
 
   object ValidPath {
     def unapply(ref: Path): Option[String] =
       ref.toList match {
         case Nil | ("" | "/") :: Nil => None
-        case other if !other.contains("..") => Some(other.mkString)
+        case other if !other.contains("..") => Some(other.mkString("/"))
         case _ => None
       }
   }
 }
 
-object Routes {
+object Controller {
   def apply[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) =
-    new Routes[F](blocker)
+    new Controller[F](blocker)
 
 }

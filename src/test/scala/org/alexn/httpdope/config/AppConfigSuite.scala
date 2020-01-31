@@ -37,7 +37,8 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
           ),
           maxmindGeoIP = MaxmindGeoIPConfig(
             apiKey = MaxmindLicenceKey("test-api-key"),
-            edition = MaxmindEdition.GeoLite2Country
+            edition = MaxmindEdition.GeoLite2Country,
+            refreshDBOnRun = false
           )
         ))
       }
@@ -45,12 +46,12 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
   }
 
   testEffect("loads config (application.default.conf)") {
-    withSystemProperty("config.resource", Some("application.test-defaults.conf")).use { _ =>
+    withSystemProperty("config.resource", Some("application.conf")).use { _ =>
       for {
         config <- AppConfig.loadFromEnv[Task]
       } yield {
         assert(config === AppConfig(
-          ConfigSource.Resource("application.test-defaults.conf"),
+          ConfigSource.Resource("application.conf"),
           httpServer = HttpServerConfig(
             address = HTTPAddress("0.0.0.0"),
             port = HTTPPort(8080),
@@ -59,8 +60,9 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             forceHTTPS = true
           ),
           maxmindGeoIP = MaxmindGeoIPConfig(
-            apiKey = MaxmindLicenceKey("my-api-key"),
-            edition = MaxmindEdition.GeoLite2City
+            apiKey = MaxmindLicenceKey(System.getenv("DOPE_MAXMIND_GEOIP_API_KEY")),
+            edition = MaxmindEdition.GeoLite2City,
+            refreshDBOnRun = true
           )
         ))
       }

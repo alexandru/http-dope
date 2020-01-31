@@ -17,12 +17,29 @@
 package org.alexn.httpdope
 package echo
 
+import cats.effect.Resource
 import monix.eval.Task
+import org.alexn.httpdope.config.AppConfig
 
 class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
-  testEffect("simple query") {
-    MaxmindGeoIPService.test[Task].use { service =>
+  testEffect("simple query from fresh database") {
+    testQuery(refreshDBOnRun = true)
+  }
+
+  testEffect("simple query from local database") {
+    testQuery(refreshDBOnRun = false)
+  }
+
+  def testQuery(refreshDBOnRun: Boolean) = {
+    val service = for {
+      cfg <- Resource.liftF(AppConfig.loadFromEnv)
+      ref <- MaxmindGeoIPService.test[Task](Some(cfg.copy(maxmindGeoIP = cfg.maxmindGeoIP.copy(refreshDBOnRun = refreshDBOnRun))))
+    } yield {
+      ref
+    }
+
+    service.use { service =>
       for {
         info <- service.findIP("185.216.34.232")
       } yield {

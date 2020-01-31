@@ -62,6 +62,7 @@ object AppConfig {
         ),
         maxmindGeoIP = MaxmindGeoIPConfig(
           apiKey = MaxmindLicenceKey(config.getString("maxmindGeoIP.apiKey")),
+          refreshDBOnRun = config.getBoolean("maxmindGeoIP.refreshDBOnRun"),
           edition = {
             val key = "maxmindGeoIP.edition"
             val value = config.getString(key)
