@@ -41,7 +41,7 @@ object Server {
       geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
 
       allRoutes = Router(
-        "/" -> static.Controller[F](blocker).routes,
+        "/" -> static.Controller[F](config.httpServer, blocker).routes,
         "/echo" -> echo.Controller[F](geoIP).routes
       )
 

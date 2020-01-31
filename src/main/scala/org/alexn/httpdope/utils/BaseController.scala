@@ -22,11 +22,13 @@ import io.circe.{Decoder, Encoder, Json, Printer}
 import org.http4s
 import org.http4s.circe.CirceInstances
 import org.http4s.dsl.Http4sDsl
+import org.http4s.twirl.TwirlInstances
 import org.http4s.{EntityDecoder, EntityEncoder, InvalidMessageBodyFailure}
 
 class BaseController[F[_] : Sync] extends BaseController.InstancesLevel0[F]
   with Http4sDsl[F]
-  with LazyLogging {
+  with LazyLogging
+  with TwirlInstances {
 
   private[BaseController] val circeInstances =
     CirceInstances.withPrinter(Printer.spaces2).build

@@ -1,0 +1,22 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <link rel="icon" type="image/png" href="/public/images/favicon.ico">
+
+        <link href="https://fonts.googleapis.com/css?family=Roboto|Suez+One" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css" />
+        <link rel="stylesheet" href="/public/css/reset.css">
+        <link rel="stylesheet" href="/public/css/main.css">
+    </head>
+    <body>
+        @content
+
+        <a class="github-fork-ribbon" href="https://github.com/alexandru/http-dope"
+        data-ribbon="Fork me on GitHub"
+        title="Fork me on GitHub"
+        target="_blank">Fork me on GitHub</a>
+    </body>
+</html>

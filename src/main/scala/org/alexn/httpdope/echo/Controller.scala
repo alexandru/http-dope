@@ -18,7 +18,7 @@ package org.alexn.httpdope.echo
 
 import cats.effect.{Sync, Timer}
 import cats.implicits._
-import org.alexn.httpdope.utils.{BaseController, RequestUtils}
+import org.alexn.httpdope.utils.{BaseController, HttpUtils}
 import org.http4s.{HttpRoutes, Request, Response}
 import scala.concurrent.duration._
 
@@ -26,24 +26,27 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F])
   (implicit F: Sync[F], timer: Timer[F])
   extends BaseController[F] {
 
-  def routes =
+  def routes: HttpRoutes[F] = {
+    val cachePolicy = HttpUtils.cached[F](Duration.MinusInf) _
+
     HttpRoutes.of[F] {
       case request @ GET -> Root / "ip" =>
-        getIP(request)
+        getIP(request).map(cachePolicy)
 
       case request @ GET -> Root / "all" =>
-        getAll(request)
+        getAll(request).map(cachePolicy)
 
       case request @ GET -> Root / "ip" =>
-        getIP(request)
+        getIP(request).map(cachePolicy)
 
       case request @ GET -> Root / "geoip" =>
-        getGeoIP(request)
+        getGeoIP(request).map(cachePolicy)
 
       case GET -> Root / "timeout" / Duration(d, unit)  =>
         val timespan = FiniteDuration(d, unit)
         simulateTimeout(timespan)
     }
+  }
 
   def getAll(request: Request[F]): F[Response[F]] = {
     F.suspend {
@@ -57,9 +60,9 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F])
         Ok(RequestInfo(
           request = ParsedRequest(
             detectedIP = IPUtils.extractClientIP(request).map(IP(_)),
-            forwardedFor = RequestUtils.getHeader(request, "X-Forwarded-For"),
-            via = RequestUtils.getHeader(request, "Via"),
-            agent = RequestUtils.getHeader(request, "User-Agent"),
+            forwardedFor = HttpUtils.getHeader(request, "X-Forwarded-For"),
+            via = HttpUtils.getHeader(request, "Via"),
+            agent = HttpUtils.getHeader(request, "User-Agent"),
             headers = headers
           ),
           geoip = ipInfo

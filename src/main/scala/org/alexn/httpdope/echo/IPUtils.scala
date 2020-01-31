@@ -17,7 +17,7 @@
 package org.alexn.httpdope.echo
 
 import java.net.InetAddress
-import org.alexn.httpdope.utils.RequestUtils
+import org.alexn.httpdope.utils.HttpUtils
 import org.http4s.Request
 import scala.util.control.NonFatal
 
@@ -41,7 +41,7 @@ object IPUtils {
     * Extract IP from the request.
     */
   def extractClientIP[F[_]](request: Request[F]): Option[String] =
-    RequestUtils.getHeader(request, "X-Forwarded-For") match {
+    HttpUtils.getHeader(request, "X-Forwarded-For") match {
       case Some(header) =>
         header.split("\\s*,\\s*").find(isPublicIP) match {
           case ip @ Some(_) => ip

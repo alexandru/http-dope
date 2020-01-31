@@ -16,21 +16,22 @@
 
 package org.alexn.httpdope.static
 
+import cats.implicits._
 import cats.effect.{Blocker, ContextShift, Sync}
+import org.alexn.httpdope.config.HttpServerConfig
+import org.alexn.httpdope.utils.{BaseController, HttpUtils}
 import org.http4s.{HttpRoutes, Request, Response, StaticFile}
-import org.http4s.dsl.Http4sDsl
+import scala.concurrent.duration._
 
-final class Controller[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) {
-  val dsl = new Http4sDsl[F] {}
-  import dsl._
+final class Controller[F[_]](cfg: HttpServerConfig, blocker: Blocker)
+  (implicit F: Sync[F], cs: ContextShift[F])
+  extends BaseController[F] {
 
   def routes =
     HttpRoutes.of[F] {
       case request @ GET -> Root =>
-        serveStaticFile("index.html", request)
-
-      case GET -> Root / "hello" / name =>
-        Ok(s"Hello, ${name.capitalize}!")
+        val rootURL = HttpUtils.getRootURL(request).getOrElse("//" + cfg.canonicalDomain)
+        Ok(html.index(rootURL)).map(HttpUtils.cached(1.hour))
 
       case request @ GET -> Root / "favicon.ico" =>
         serveStaticFile("images/favicon.ico", request)
@@ -39,9 +40,11 @@ final class Controller[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextS
         serveStaticFile(path, request)
     }
 
-  def serveStaticFile(resourcePath: String, r: Request[F]) =
-    StaticFile.fromResource(s"/public/${resourcePath}", blocker, Some(r))
-      .getOrElse(Response.notFound)
+  def serveStaticFile(resourcePath: String, r: Request[F]): F[Response[F]] =
+    StaticFile.fromResource(s"/public/$resourcePath", blocker, Some(r)).value.map {
+      case Some(r) => HttpUtils.cached(4.hours)(r)
+      case None => Response.notFound[F]
+    }
 
   object ValidPath {
     def unapply(ref: Path): Option[String] =
@@ -54,7 +57,6 @@ final class Controller[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextS
 }
 
 object Controller {
-  def apply[F[_]](blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) =
-    new Controller[F](blocker)
-
+  def apply[F[_]](cfg: HttpServerConfig, blocker: Blocker)(implicit F: Sync[F], cs: ContextShift[F]) =
+    new Controller[F](cfg, blocker)
 }

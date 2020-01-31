@@ -12,6 +12,7 @@ val CommonsCompressVersion = "1.19"
 lazy val root = (project in file("."))
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(SbtTwirl)
   .settings(
     organization := "org.alexn",
     name := "http-dope",
@@ -22,6 +23,13 @@ lazy val root = (project in file("."))
       // Replaces macro-paradise
       "-Ymacro-annotations",
     ),
+    // Disabling the unused import warning, as it's
+    // too damn annoying
+    scalacOptions --= Seq(
+      "-Wunused:imports",
+      "-Ywarn-unused:imports",
+      "-Ywarn-unused-import",
+    ),
 
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
@@ -29,12 +37,14 @@ lazy val root = (project in file("."))
       "com.maxmind.geoip2" % "geoip2" % GeoIP2Version,
       "com.typesafe" % "config" % TypesafeConfigVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
+      "io.circe" %% "circe-parser" % CirceVersion,
       "io.estatico" %% "newtype" % NewtypeVersion,
       "io.monix" %% "monix" % MonixVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
+      "org.http4s" %% "http4s-twirl" % Http4sVersion,
       "org.apache.commons" % "commons-compress" % CommonsCompressVersion,
       "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     ),
@@ -48,7 +58,14 @@ lazy val root = (project in file("."))
     licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
 
     herokuAppName in Compile := "http-dope",
-    herokuJdkVersion in Compile := "11"
+    herokuJdkVersion in Compile := "11",
+
+    // Twirl template settings
+    sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
+    TwirlKeys.templateImports ++= Seq(
+      "org.alexn.httpdope.config._",
+      "org.alexn.httpdope.static.html._"
+    )
   )
 
 // Reloads build.sbt changes whenever detected
