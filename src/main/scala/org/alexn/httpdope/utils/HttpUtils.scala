@@ -18,6 +18,7 @@ package org.alexn.httpdope.utils
 
 import io.circe.generic.JsonCodec
 import io.circe.parser.decode
+import org.http4s.Uri.Scheme
 import org.http4s.{Header, Request, Response}
 import org.http4s.headers.{Host, `X-Forwarded-Proto`}
 import org.http4s.util.CaseInsensitiveString
@@ -35,18 +36,18 @@ object HttpUtils {
   def getRootURL[F[_]](r: Request[F]): Option[String] = {
     r.headers.get(Host) match {
       case Some(host) =>
-        val proto = getProtocol(r).getOrElse("http")
-        Some(proto + "://" + host.value)
+        val scheme = getForwardedProto(r).getOrElse(Scheme.http)
+        Some(scheme.value + "://" + host.value)
       case _ =>
         None
     }
   }
 
-  def getProtocol[F[_]](r: Request[F]): Option[String] = {
+  def getForwardedProto[F[_]](r: Request[F]): Option[Scheme] = {
     r.headers.get(CaseInsensitiveString("Cf-Visitor"))
       .flatMap(h => decode[CFVisitor](h.value).toOption.flatMap(_.scheme))
       .orElse(r.headers.get(`X-Forwarded-Proto`).map(_.value))
-      .filter(h => h == "http" || h == "https")
+      .flatMap(Scheme.fromString(_).toOption)
   }
 
   def cached[F[_]](expiry: Duration, isPublic: Boolean = true)(r: Response[F]): Response[F] = {

@@ -17,12 +17,32 @@
 package org.alexn.httpdope.utils
 
 import cats.Applicative
+import cats.data.Kleisli
+import cats.implicits._
 import org.alexn.httpdope.config.HttpServerConfig
-import org.http4s.Http
-import org.http4s.server.middleware.{HttpsRedirect => Implementation}
+import org.http4s.Status.MovedPermanently
+import org.http4s.Uri.{Authority, RegName, Scheme}
+import org.http4s.headers.{Host, Location, `Content-Type`}
+import org.http4s.{Headers, Http, MediaType, Response}
 
-object HttpsRedirect {
-
+object HttpsRedirect extends LazyLogging {
+  /**
+    * Copies `org.http4s.server.middleware.HttpsRedirect`
+    */
   def apply[F[_], G[_]](config: HttpServerConfig)(http: Http[F, G])(implicit F: Applicative[F]): Http[F, G] =
-    if (config.forceHTTPS) Implementation(http) else http
+    if (!config.forceHTTPS) http else {
+      Kleisli { req =>
+        (HttpUtils.getForwardedProto(req), req.headers.get(Host)) match {
+          case (Some(Scheme.http), Some(host)) =>
+            logger.debug(s"Redirecting ${req.method} ${req.uri} to https on $host")
+            val authority = Authority(host = RegName(host.value))
+            val location = req.uri.copy(scheme = Some(Scheme.https), authority = Some(authority))
+            val headers = Headers(Location(location) :: `Content-Type`(MediaType.text.xml) :: Nil)
+            val response = Response[G](status = MovedPermanently, headers = headers)
+            response.pure[F]
+          case _ =>
+            http(req)
+        }
+      }
+    }
 }
