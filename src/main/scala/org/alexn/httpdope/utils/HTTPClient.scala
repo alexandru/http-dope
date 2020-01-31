@@ -50,6 +50,13 @@ final class HTTPClient[F[_]] private (client: Client[F], blocker: Blocker)
 }
 
 object HTTPClient {
+  /** Builder. */
+  def apply[F[_]](client: Client[F], blocker: Blocker)
+    (implicit F: Concurrent[F], cs: ContextShift[F]): HTTPClient[F] = {
+
+    new HTTPClient(client, blocker)
+  }
+
   /**
     * Creates a test instance, to be used in the console.
     */

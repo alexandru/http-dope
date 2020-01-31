@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope.config
+package org.alexn.httpdope
+package config
 
 import monix.eval.Task
+import org.alexn.httpdope.echo._
 
 class AppConfigSuite extends AsyncBaseSuite.OfTask {
   testEffect("loads config (application.test.conf)") {
@@ -32,6 +34,10 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             canonicalDomain = DomainName("test.org"),
             canonicalRedirect = true,
             forceHTTPS = false
+          ),
+          maxmindGeoIP = MaxmindGeoIPConfig(
+            apiKey = MaxmindLicenceKey("test-api-key"),
+            edition = MaxmindEdition.GeoLite2Country
           )
         ))
       }
@@ -39,18 +45,22 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
   }
 
   testEffect("loads config (application.default.conf)") {
-    withSystemProperty("config.resource", None).use { _ =>
+    withSystemProperty("config.resource", Some("application.test-defaults.conf")).use { _ =>
       for {
         config <- AppConfig.loadFromEnv[Task]
       } yield {
         assert(config === AppConfig(
-          ConfigSource.Resource("application.conf"),
+          ConfigSource.Resource("application.test-defaults.conf"),
           httpServer = HttpServerConfig(
             address = HTTPAddress("0.0.0.0"),
             port = HTTPPort(8080),
             canonicalDomain = DomainName("dope.alexn.org"),
             canonicalRedirect = false,
             forceHTTPS = true
+          ),
+          maxmindGeoIP = MaxmindGeoIPConfig(
+            apiKey = MaxmindLicenceKey("my-api-key"),
+            edition = MaxmindEdition.GeoLite2City
           )
         ))
       }
