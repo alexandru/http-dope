@@ -11,3 +11,5 @@ jobs:
       - name: Test
         run: |
           sbt test
+        env:
+          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
