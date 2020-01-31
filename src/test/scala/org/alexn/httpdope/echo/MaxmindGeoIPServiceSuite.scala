@@ -24,7 +24,13 @@ import org.alexn.httpdope.config.AppConfig
 class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
   testEffect("simple query from fresh database") {
-    testQuery(refreshDBOnRun = true)
+    Task.suspend {
+      val isCI = Option(System.getenv("CI")).fold(true)(_.toLowerCase.trim == "true")
+      if (isCI) {
+        ignore("CI detected, skipping test to not upset Maxmind's online service")
+      }
+      testQuery(refreshDBOnRun = true)
+    }
   }
 
   testEffect("simple query from local database") {

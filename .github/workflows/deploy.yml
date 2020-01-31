@@ -13,6 +13,7 @@ jobs:
 
       - name: Deploy on Heroku
         run: |
-          sbt stage deployHeroku
+          ./scripts/deploy.sh
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
