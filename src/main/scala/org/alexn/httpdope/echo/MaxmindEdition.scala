@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope
+package org.alexn.httpdope.echo
 
-import io.estatico.newtype.macros.newtype
+sealed abstract class MaxmindEdition(val id: String)
 
-package object config {
-  @newtype case class DomainName(value: String)
-  @newtype case class HTTPAddress(value: String)
-  @newtype case class HTTPPort(value: Int)
+object MaxmindEdition {
+  def apply(id: String): Option[MaxmindEdition] =
+    id match {
+      case GeoLite2City.id => Some(GeoLite2City)
+      case GeoLite2Country.id => Some(GeoLite2Country)
+      case _ => None
+    }
+
+  final case object GeoLite2City extends MaxmindEdition("GeoLite2-City")
+  final case object GeoLite2Country extends MaxmindEdition("GeoLite2-Country")
 }

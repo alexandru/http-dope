@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope.config
+package org.alexn.httpdope
 
-import cats.effect.{Effect, IO, Resource}
+import cats.effect.{ConcurrentEffect, IO, Resource}
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalactic.source
@@ -25,7 +25,7 @@ import org.scalatest.{Tag, compatible}
 import scala.concurrent.{Future, Promise}
 
 trait AsyncBaseSuite[F[_]] extends AsyncFunSuite {
-  implicit def F: Effect[F]
+  implicit def F: ConcurrentEffect[F]
 
   protected def testEffect(testName: String, testTags: Tag*)(testFun: => F[compatible.Assertion])(implicit pos: source.Position): Unit =
     test(testName, testTags:_*)(unsafeToFuture(testFun))
@@ -33,6 +33,14 @@ trait AsyncBaseSuite[F[_]] extends AsyncFunSuite {
   protected def withSystemProperty(key: String, value: Option[String]): Resource[F, Unit] =
     Resource(F.delay {
       val oldValue = Option(System.getProperty(key)).filter(_.nonEmpty)
+      value.fold(System.clearProperty(key))(System.setProperty(key, _))
+      val reset = F.delay { oldValue.fold(System.clearProperty(key))(System.setProperty(key, _)); () }
+      ((), reset)
+    })
+
+  protected def withSystemEnv(key: String, value: Option[String]): Resource[F, Unit] =
+    Resource(F.delay {
+      val oldValue = Option(System.getenv(key)).filter(_.nonEmpty)
       value.fold(System.clearProperty(key))(System.setProperty(key, _))
       val reset = F.delay { oldValue.fold(System.clearProperty(key))(System.setProperty(key, _)); () }
       ((), reset)
@@ -48,6 +56,6 @@ trait AsyncBaseSuite[F[_]] extends AsyncFunSuite {
 object AsyncBaseSuite {
   trait OfTask extends AsyncBaseSuite[Task] {
     import Scheduler.Implicits.global
-    implicit val F: Effect[Task] = Task.catsEffect
+    implicit val F: ConcurrentEffect[Task] = Task.catsEffect
   }
 }

@@ -24,12 +24,12 @@ import org.http4s.Status.Found
 import org.http4s.Uri.{Authority, RegName, Scheme}
 import org.http4s.headers.{Host, Location, `Content-Type`}
 import org.http4s.{Headers, Http, MediaType, Response}
-import org.log4s.getLogger
 
-object CanonicalRedirectMiddleware {
-  private val logger = getLogger
+object CanonicalRedirectMiddleware extends LazyLogging {
 
-  def apply[F[_], G[_]](config: HttpServerConfig)(http: Http[F, G])(implicit F: Applicative[F]): Http[F, G] =
+  def apply[F[_], G[_]](config: HttpServerConfig)
+    (http: Http[F, G])(implicit F: Applicative[F]): Http[F, G] = {
+
     if (!config.canonicalRedirect) http else {
       Kleisli { req =>
         req.headers.get(Host).map(_.value) match {
@@ -50,4 +50,5 @@ object CanonicalRedirectMiddleware {
         }
       }
     }
+  }
 }

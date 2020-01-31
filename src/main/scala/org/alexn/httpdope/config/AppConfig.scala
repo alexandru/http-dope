@@ -18,11 +18,13 @@ package org.alexn.httpdope.config
 
 import cats.implicits._
 import cats.effect.Sync
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigException}
+import org.alexn.httpdope.echo.{MaxmindGeoIPConfig, MaxmindEdition, MaxmindLicenceKey}
 
 final case class AppConfig(
   source: ConfigSource,
-  httpServer: HttpServerConfig
+  httpServer: HttpServerConfig,
+  maxmindGeoIP: MaxmindGeoIPConfig
 )
 
 final case class HttpServerConfig(
@@ -57,6 +59,19 @@ object AppConfig {
           canonicalDomain = DomainName(config.getString("http.server.canonicalDomain").toLowerCase),
           canonicalRedirect = config.getBoolean("http.server.canonicalRedirect"),
           forceHTTPS = config.getBoolean("http.server.forceHTTPS")
+        ),
+        maxmindGeoIP = MaxmindGeoIPConfig(
+          apiKey = MaxmindLicenceKey(config.getString("maxmindGeoIP.apiKey")),
+          refreshDBOnRun = config.getBoolean("maxmindGeoIP.refreshDBOnRun"),
+          edition = {
+            val key = "maxmindGeoIP.edition"
+            val value = config.getString(key)
+            MaxmindEdition(value)
+              .getOrElse(throw new ConfigException.WrongType(
+                config.getValue(key).origin(),
+                s"Unexpected MaxmindEdition ID: $value"
+              ))
+          }
         )
       )
     }

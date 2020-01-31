@@ -8,6 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
+      - name: Download Maxmind DB
+        run: |
+          ./scripts/refresh-maxmind-db.sh
+        env:
+          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
+
       - name: Test
         run: |
           sbt test
+        env:
+          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}

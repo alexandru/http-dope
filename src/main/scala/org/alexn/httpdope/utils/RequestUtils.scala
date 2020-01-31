@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope
+package org.alexn.httpdope.utils
 
-import io.estatico.newtype.macros.newtype
+import org.http4s.Request
+import org.http4s.util.CaseInsensitiveString
 
-package object config {
-  @newtype case class DomainName(value: String)
-  @newtype case class HTTPAddress(value: String)
-  @newtype case class HTTPPort(value: Int)
+object RequestUtils {
+  /**
+    * Fetch a header from the request.
+    */
+  def getHeader[F[_]](request: Request[F], name: String): Option[String] = {
+    request.headers.get(CaseInsensitiveString(name)).map(_.value)
+  }
 }

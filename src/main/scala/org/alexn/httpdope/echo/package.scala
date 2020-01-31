@@ -17,9 +17,27 @@
 package org.alexn.httpdope
 
 import io.estatico.newtype.macros.newtype
+import org.alexn.httpdope.utils.JSONFormatters
 
-package object config {
-  @newtype case class DomainName(value: String)
-  @newtype case class HTTPAddress(value: String)
-  @newtype case class HTTPPort(value: Int)
+package object echo {
+  @newtype case class IP(value: String)
+
+  object IP {
+    implicit val jsonFormat =
+      new JSONFormatters.Derived[String, IP](IP(_), _.value)
+  }
+
+  @newtype case class MaxmindLicenceKey(value: String)
+
+  object MaxmindLicenceKey {
+    implicit val jsonFormat =
+      new JSONFormatters.Derived[String, MaxmindLicenceKey](MaxmindLicenceKey(_), _.value)
+  }
+
+  @newtype case class ConnectionType(value: String)
+
+  object ConnectionType {
+    implicit val jsonFormat =
+      new JSONFormatters.Derived[String, ConnectionType](ConnectionType(_), _.value)
+  }
 }

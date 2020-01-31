@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.alexn.httpdope
+package org.alexn.httpdope.echo
 
-import io.estatico.newtype.macros.newtype
-
-package object config {
-  @newtype case class DomainName(value: String)
-  @newtype case class HTTPAddress(value: String)
-  @newtype case class HTTPPort(value: Int)
-}
+final case class MaxmindGeoIPConfig(
+  apiKey: MaxmindLicenceKey,
+  edition: MaxmindEdition,
+  refreshDBOnRun: Boolean
+)
