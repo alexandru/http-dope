@@ -25,10 +25,8 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
   testEffect("simple query from fresh database") {
     Task.suspend {
-      val isCI = Option(System.getenv("CI")).fold(true)(_.toLowerCase.trim == "true")
-      if (isCI) {
-        ignore("CI detected, skipping test to not upset Maxmind's online service")
-      }
+      // val isCI = Option(System.getenv("CI")).fold(false)(_.toLowerCase.trim == "true")
+      // assume(isCI, "environment is not CI")
       testQuery(refreshDBOnRun = true)
     }
   }
