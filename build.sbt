@@ -1,3 +1,4 @@
+
 val Http4sVersion = "0.21.0-RC2"
 val CirceVersion = "0.13.0-RC1"
 val LogbackVersion = "1.2.3"
@@ -9,14 +10,18 @@ val SilencerVersion = "1.4.4"
 val GeoIP2Version = "2.12.0"
 val CommonsCompressVersion = "1.19"
 
+// Used below for parsing versions, specified via git tags
+val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
+
 lazy val root = (project in file("."))
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(SbtTwirl)
+  .enablePlugins(DockerPlugin)
+  .enablePlugins(GitVersioning)
   .settings(
     organization := "org.alexn",
     name := "http-dope",
-    version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.13.1",
 
     scalacOptions ++= Seq(
@@ -60,12 +65,41 @@ lazy val root = (project in file("."))
     herokuAppName in Compile := "http-dope",
     herokuJdkVersion in Compile := "11",
 
+    dockerBaseImage := "adoptopenjdk/openjdk11" ,
+    packageName in Docker := "http-dope",
+
+    dockerUpdateLatest := false,
+    dockerUsername := Some("alexelcu"),
+    dockerRepository := Some("http-dope"),
+    dockerAlias := DockerAlias(None, dockerUsername.value, (packageName in Docker).value, git.gitDescribedVersion.value),
+
     // Twirl template settings
     sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
     TwirlKeys.templateImports ++= Seq(
       "org.alexn.httpdope.config._",
       "org.alexn.httpdope.static.html._"
-    )
+    ),
+
+    // --------------------
+    // Versioning setup
+    //
+    // Uses hash versioning (the sha of the git commit becomes the version suffix).
+    // See: https://github.com/sbt/sbt-git
+    //
+    git.baseVersion := "0.0.1",
+
+    git.gitTagToVersionNumber := {
+      case ReleaseTag(v) => Some(v)
+      case _ => None
+    },
+    git.uncommittedSignifier := Some("SNAPSHOT"),
+    git.formattedShaVersion := {
+      val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, git.uncommittedSignifier.value)
+
+      git.gitHeadCommit.value map { _.substring(0, 7) } map { sha =>
+        git.baseVersion.value + "-" + sha + suffix
+      }
+    },
   )
 
 // Reloads build.sbt changes whenever detected
