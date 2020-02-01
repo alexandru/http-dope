@@ -13,7 +13,7 @@ jobs:
 
       - name: Deploy on Heroku
         run: |
-          ./scripts/deploy-heroku.sh
+          ./scripts/heroku-deploy.sh
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
@@ -43,13 +43,6 @@ jobs:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
 
-    - name: Compile and pack as Docker Image
-      run: sbt clean update stage docker:publishLocal
-
-    - name: Tag and push Docker Image
+    - name: Compile and publish Docker image
       run: |
-        GIT_TAG=`echo "$GIT_TAG" | cut -d"/" -f 3`
-        docker push $DOCKER_IMAGE:$GIT_TAG
-      env:
-        DOCKER_IMAGE: docker.io/orielventures/fama
-        GIT_TAG: ${{ github.ref }}
+        ./scripts/docker-publish.sh
