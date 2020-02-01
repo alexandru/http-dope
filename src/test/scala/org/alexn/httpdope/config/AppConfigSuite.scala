@@ -38,7 +38,7 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
           maxmindGeoIP = MaxmindGeoIPConfig(
             apiKey = MaxmindLicenceKey("test-api-key"),
             edition = MaxmindEdition.GeoLite2Country,
-            refreshDBOnRun = false
+            refreshDBOnRun = true
           )
         ))
       }
@@ -62,7 +62,7 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
           maxmindGeoIP = MaxmindGeoIPConfig(
             apiKey = MaxmindLicenceKey(System.getenv("DOPE_MAXMIND_GEOIP_API_KEY")),
             edition = MaxmindEdition.GeoLite2City,
-            refreshDBOnRun = true
+            refreshDBOnRun = false
           )
         ))
       }
