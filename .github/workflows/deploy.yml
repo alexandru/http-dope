@@ -46,3 +46,5 @@ jobs:
     - name: Compile and publish Docker image
       run: |
         ./scripts/docker-publish.sh
+      env:
+        DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
