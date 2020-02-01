@@ -50,12 +50,6 @@ final case class GeoIPContinent(
 )
 
 @JsonCodec
-final case class GeoIPInternetServiceProvider(
-  isp: Option[String],
-  organization: Option[String]
-)
-
-@JsonCodec
 final case class GeoIPInfo(
   ip: IP,
   country: Option[GeoIPCountry],
@@ -65,6 +59,4 @@ final case class GeoIPInfo(
   city: Option[GeoIPCity],
   location: Option[GeoIPLocation],
   postal: Option[GeoIPPostalCode],
-  connectionType: Option[ConnectionType],
-  isp: Option[GeoIPInternetServiceProvider]
 )

@@ -57,8 +57,6 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
             Some(GeoIPCity("Vienna")),
             Some(GeoIPLocation(48.2994,16.3479,Some("Europe/Vienna"),Some(200))),
             Some(GeoIPPostalCode("1210")),
-            None,
-            None
           )))
       }
     }

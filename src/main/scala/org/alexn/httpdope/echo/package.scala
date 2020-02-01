@@ -33,11 +33,4 @@ package object echo {
     implicit val jsonFormat =
       new JSONFormatters.Derived[String, MaxmindLicenceKey](MaxmindLicenceKey(_), _.value)
   }
-
-  @newtype case class ConnectionType(value: String)
-
-  object ConnectionType {
-    implicit val jsonFormat =
-      new JSONFormatters.Derived[String, ConnectionType](ConnectionType(_), _.value)
-  }
 }

@@ -84,26 +84,6 @@ final class MaxmindGeoIPService[F[_]] private (db: DatabaseReader, blocker: Bloc
     } else {
       blocker.blockOn(F.delay {
         val cityInfo = db.city(address)
-
-        // This needs a commercial database to work!
-        val connectionType = Try(db.connectionType(address))
-          .toOption
-          .flatMap(r => Option(r.getConnectionType))
-          .map(v => ConnectionType(v.name()))
-
-        // This needs a commercial database to work!
-        val isp =
-          Try(db.isp(address)).toOption.flatMap { r =>
-            val ref = GeoIPInternetServiceProvider(
-              isp = Option(r.getIsp),
-              organization = Option(r.getOrganization)
-            )
-            if (ref.isp.isDefined || ref.organization.isDefined)
-              Some(ref)
-            else
-              None
-          }
-
         Some(
           GeoIPInfo(
             ip = IP(address.getHostAddress),
@@ -114,8 +94,6 @@ final class MaxmindGeoIPService[F[_]] private (db: DatabaseReader, blocker: Bloc
             city = city(cityInfo.getCity),
             location = location(cityInfo.getLocation),
             postal = postal(cityInfo.getPostal),
-            connectionType = connectionType,
-            isp = isp
           ))
       })
     }
