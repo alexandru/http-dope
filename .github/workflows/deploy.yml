@@ -1,11 +1,11 @@
 name: deploy
 on:
   push:
-    branches:
-      - master
+      tags:
+        - 'v20[1-9]+[0-9]+[0-1]+[0-9]+[0-3]+[0-9]+-[0-2]+[0-9]+[0-5]+[0-9]+'
 
 jobs:
-  deploy:
+  deploy-heroku:
     runs-on: ubuntu-18.04
 
     steps:
@@ -13,7 +13,43 @@ jobs:
 
       - name: Deploy on Heroku
         run: |
-          ./scripts/deploy.sh
+          ./scripts/deploy-heroku.sh
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
+
+  deploy_docker:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@master
+    - uses: joschi/setup-jdk@v1
+      with:
+        java-version: 'openjdk11'
+        architecture: 'x64'
+
+    - name: Install Docker 19.03.2
+      run: |
+        sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+        sudo apt-get update
+        apt-cache policy docker-ce
+        sudo apt-get install docker-ce=5:19.03.2~3-0~ubuntu-bionic
+
+    - name: Login to Docker
+      run: docker login --username=$DOCKER_USER  --password=$DOCKER_PASS
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+
+    - name: Compile and pack as Docker Image
+      run: sbt clean update stage docker:publishLocal
+
+    - name: Tag and push Docker Image
+      run: |
+        GIT_TAG=`echo "$GIT_TAG" | cut -d"/" -f 3`
+        docker push $DOCKER_IMAGE:$GIT_TAG
+      env:
+        DOCKER_IMAGE: docker.io/orielventures/fama
+        GIT_TAG: ${{ github.ref }}
