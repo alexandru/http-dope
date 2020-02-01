@@ -9,4 +9,4 @@ DIR="$(
 cd "$DIR"
 
 ./scripts/refresh-maxmind-db.sh
-exec sbt clean update stage docker:publish
+exec sbt clean update stage docker:publishLocal

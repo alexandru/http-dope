@@ -5,18 +5,18 @@ on:
         - 'v20[1-9]+[0-9]+[0-1]+[0-9]+[0-3]+[0-9]+-[0-2]+[0-9]+[0-5]+[0-9]+'
 
 jobs:
-  deploy-heroku:
-    runs-on: ubuntu-18.04
+  # deploy-heroku:
+  #   runs-on: ubuntu-18.04
 
-    steps:
-      - uses: actions/checkout@master
+  #   steps:
+  #     - uses: actions/checkout@master
 
-      - name: Deploy on Heroku
-        run: |
-          ./scripts/heroku-deploy.sh
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
+  #     - name: Deploy on Heroku
+  #       run: |
+  #         ./scripts/heroku-deploy.sh
+  #       env:
+  #         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+  #         DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
 
   deploy_docker:
     runs-on: ubuntu-18.04
@@ -45,6 +45,16 @@ jobs:
 
     - name: Compile and publish Docker image
       run: |
-        ./scripts/docker-publish.sh
+        ./scripts/docker-publish-local.sh
       env:
         DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
+
+    - name: Tag and push Docker Image
+      run: |
+        GIT_TAG=`echo "$GIT_TAG" | cut -d"/" -f 3`
+        docker push $DOCKER_IMAGE:$GIT_TAG
+        docker tag "alexelcu/http-dope:$GIT_TAG" alexelcu/http-dope:latest
+        docker push $DOCKER_IMAGE:latest
+      env:
+        DOCKER_IMAGE: docker.io/alexelcu/http-dope
+        GIT_TAG: ${{ github.ref }}
