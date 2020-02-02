@@ -19,6 +19,7 @@ package httpdope.echo
 import java.net.InetAddress
 
 import httpdope.common.http.HttpUtils
+import httpdope.common.models.IP
 import org.http4s.Request
 
 import scala.util.control.NonFatal
@@ -30,9 +31,9 @@ object IPUtils {
   /**
     * Returns `true` if the given IP is a public one.
     */
-  def isPublicIP(ip: String): Boolean = {
+  def isPublicIP(ip: IP): Boolean = {
     try {
-      val parsed = InetAddress.getByName(ip)
+      val parsed = InetAddress.getByName(ip.value)
       !(parsed.isLoopbackAddress || parsed.isSiteLocalAddress)
     } catch {
       case NonFatal(_) => false
@@ -42,15 +43,16 @@ object IPUtils {
   /**
     * Extract IP from the request.
     */
-  def extractClientIP[F[_]](request: Request[F]): Option[String] =
+  def extractClientIP[F[_]](request: Request[F]): Option[IP] =
     HttpUtils.getHeader(request, "X-Forwarded-For") match {
       case Some(header) =>
-        header.split("\\s*,\\s*").find(isPublicIP) match {
-          case ip @ Some(_) => ip
+        header.split("\\s*,\\s*").find(ip => isPublicIP(IP(ip))) match {
+          case Some(ip) =>
+            Some(IP(ip))
           case None =>
-            request.remoteAddr
+            request.remoteAddr.map(IP(_))
         }
       case None =>
-        request.remoteAddr
+        request.remoteAddr.map(IP(_))
     }
 }

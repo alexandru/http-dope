@@ -33,17 +33,18 @@ import org.http4s.server.middleware.{AutoSlash, Logger}
 
 object Server {
 
-  def stream[F[_]](implicit F: ConcurrentEffect[F], T: Timer[F], C: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
+  def stream[F[_]](implicit F: ConcurrentEffect[F], timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
     val stream = for {
       config <- Stream.eval(AppConfig.loadFromEnv[F])
       (_, blocker) <- Stream.resource(Schedulers.createBlockingContext())
       blazeClient <- BlazeClientBuilder[F](global).stream
       httpClient = HTTPClient(blazeClient, blocker)
       geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
+      system <- Stream.eval(SystemCommands[F](blocker))
 
       allRoutes = Router(
         "/" -> static.Controller[F](config.httpServer, blocker).routes,
-        "/echo" -> echo.Controller[F](geoIP).routes
+        "/echo" -> echo.Controller[F](geoIP, system).routes
       )
 
       // With all middleware

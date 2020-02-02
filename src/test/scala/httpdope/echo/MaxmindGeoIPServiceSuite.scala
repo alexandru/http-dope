@@ -18,6 +18,7 @@ package httpdope
 package echo
 
 import cats.effect.Resource
+import httpdope.common.models.IP
 import monix.eval.Task
 import httpdope.config.AppConfig
 

@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package httpdope
+package httpdope.common
 
-import io.estatico.newtype.macros.newtype
 import httpdope.common.utils.JSONFormatters
+import httpdope.echo.IPUtils
+import io.estatico.newtype.macros.newtype
 
-package object echo {
-  @newtype case class MaxmindLicenceKey(value: String)
+package object models {
+  @newtype case class IP(value: String) {
+    /**
+      * Returns `true` if this is a valid public IP, `false` otherwise.
+      */
+    def isPublicIP: Boolean =
+      IPUtils.isPublicIP(this)
+  }
 
-  object MaxmindLicenceKey {
+  object IP {
     implicit val jsonFormat =
-      new JSONFormatters.Derived[String, MaxmindLicenceKey](MaxmindLicenceKey(_), _.value)
+      new JSONFormatters.Derived[String, IP](IP(_), _.value)
   }
 }

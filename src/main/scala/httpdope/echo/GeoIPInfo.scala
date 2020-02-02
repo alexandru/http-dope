@@ -16,6 +16,7 @@
 
 package httpdope.echo
 
+import httpdope.common.models.IP
 import io.circe.generic.JsonCodec
 
 @JsonCodec

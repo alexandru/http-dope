@@ -16,25 +16,24 @@
 
 package httpdope.echo
 
-import cats.implicits._
 import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.util.zip.GZIPInputStream
 
-import com.maxmind.geoip2.record._
 import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource}
+import cats.implicits._
 import com.maxmind.geoip2.DatabaseReader
-import httpdope.config.AppConfig
+import com.maxmind.geoip2.record._
+import httpdope.common.models.IP
 import httpdope.common.utils.{FileUtils, HTTPClient, LazyLogging, Schedulers}
+import httpdope.config.AppConfig
 import org.http4s.client.blaze.BlazeClientBuilder
-
-import scala.util.Try
 
 final class MaxmindGeoIPService[F[_]] private (db: DatabaseReader, blocker: Blocker)
   (implicit F: Async[F], cs: ContextShift[F]) {
 
-  def findIP(ip: String): F[Option[GeoIPInfo]] =
-    F.delay(InetAddress.getByName(ip)).flatMap(findByAddress)
+  def findIP(ip: IP): F[Option[GeoIPInfo]] =
+    F.delay(InetAddress.getByName(ip.value)).flatMap(findByAddress)
 
   def findByAddress(address: InetAddress): F[Option[GeoIPInfo]] = {
     def country(ref: Country): Option[GeoIPCountry] = {

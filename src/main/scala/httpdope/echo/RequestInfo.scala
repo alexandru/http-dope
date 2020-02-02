@@ -16,19 +16,23 @@
 
 package httpdope.echo
 
+import httpdope.common.models.IP
 import io.circe.generic.JsonCodec
+import scala.collection.immutable.ListMap
 
 @JsonCodec
 final case class RequestInfo(
-  geoip: Option[GeoIPInfo],
-  request: ParsedRequest
+  request: ParsedRequest,
+  clientGeoIP: Option[GeoIPInfo],
+  serverGeoIP: Option[GeoIPInfo],
 )
 
 @JsonCodec
 final case class ParsedRequest(
   detectedIP: Option[IP],
+  serverIP: Option[IP],
   forwardedFor: Option[String],
   via: Option[String],
   agent: Option[String],
-  headers: List[(String, String)],
+  headers: ListMap[String, String],
 )
