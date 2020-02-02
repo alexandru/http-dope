@@ -76,8 +76,8 @@ lazy val root = (project in file("."))
     // Twirl template settings
     sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
     TwirlKeys.templateImports ++= Seq(
-      "org.alexn.httpdope.config._",
-      "org.alexn.httpdope.static.html._"
+      "httpdope.config._",
+      "httpdope.static.html._"
     ),
 
     // --------------------
