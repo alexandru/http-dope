@@ -24,7 +24,7 @@ import monix.execution.atomic.Atomic
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 final class Cached[F[_], A] private (implicit F: Concurrent[F], clock: Clock[F])
-  extends LazyLogging {
+  extends StrictLogging {
 
   private type State = Map[String, (Deferred[F, A], Long)]
   private[this] val state = Atomic(Map.empty : State)

@@ -17,16 +17,22 @@
 package httpdope.common.utils
 
 import java.io.File
+import cats.data.EitherT
 import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
-import org.http4s.EntityDecoder
+import httpdope.common.models.{HttpError, JSONError, WebError}
+import io.circe.Decoder
+import monix.execution.Scheduler
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
-import monix.execution.Scheduler
+import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.headers.Accept
+import org.http4s.util.CaseInsensitiveString
+import org.http4s._
 
 final class HTTPClient[F[_]] private (client: Client[F], blocker: Blocker)
   (implicit F: Concurrent[F], cs: ContextShift[F])
-  extends LazyLogging {
+  extends Http4sClientDsl[F] with StrictLogging {
 
   /**
     * Downloads a binary file from a given URL.

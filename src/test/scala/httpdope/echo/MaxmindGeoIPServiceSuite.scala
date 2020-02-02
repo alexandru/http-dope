@@ -26,8 +26,8 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
   testEffect("simple query from fresh database") {
     Task.suspend {
-      // val isCI = Option(System.getenv("CI")).fold(false)(_.toLowerCase.trim == "true")
-      // assume(isCI, "environment is not CI")
+      val isCI = Option(System.getenv("CI")).fold(false)(_.toLowerCase.trim == "true")
+      assume(isCI, "environment is not CI")
       testQuery(refreshDBOnRun = true)
     }
   }
@@ -46,7 +46,7 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
     service.use { service =>
       for {
-        info <- service.findIP("185.216.34.232")
+        info <- service.findIP(IP("185.216.34.232"))
       } yield {
         assert(info === Some(
           GeoIPInfo(

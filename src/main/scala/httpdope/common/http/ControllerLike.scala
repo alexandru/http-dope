@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package httpdope.vimeo.models
+package httpdope.common.http
 
-/**
-  * Configuration for Vimeo's API.
-  */
-final case class VimeoConfig(
-  accessToken: Option[VimeoAccessToken]
-)
+import org.http4s.HttpRoutes
+
+trait ControllerLike[F[_]] {
+  def routes: HttpRoutes[F]
+}

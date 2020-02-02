@@ -42,9 +42,11 @@ object Server {
       geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
       system <- Stream.eval(SystemCommands[F](blocker))
 
+      vimeoController <- Stream.eval(vimeo.Controller[F](config.vimeo, blazeClient, system))
       allRoutes = Router(
         "/" -> static.Controller[F](config.httpServer, blocker).routes,
-        "/echo" -> echo.Controller[F](geoIP, system).routes
+        "/echo" -> echo.Controller[F](geoIP, system).routes,
+        "/vimeo" -> vimeoController.routes
       )
 
       // With all middleware

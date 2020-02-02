@@ -19,16 +19,17 @@ package httpdope.common.http
 import cats.effect.Sync
 import cats.implicits._
 import io.circe.{Decoder, Encoder, Json, Printer}
-import httpdope.common.utils.LazyLogging
+import httpdope.common.utils.StrictLogging
 import org.http4s
 import org.http4s.circe.CirceInstances
 import org.http4s.dsl.Http4sDsl
 import org.http4s.twirl.TwirlInstances
 import org.http4s.{EntityDecoder, EntityEncoder, InvalidMessageBodyFailure, Response}
 
-class BaseController[F[_] : Sync] extends BaseController.InstancesLevel0[F]
+abstract class BaseController[F[_] : Sync] extends BaseController.InstancesLevel0[F]
+  with ControllerLike[F]
   with Http4sDsl[F]
-  with LazyLogging
+  with StrictLogging
   with TwirlInstances {
 
   private[BaseController] val circeInstances =
@@ -50,6 +51,18 @@ class BaseController[F[_] : Sync] extends BaseController.InstancesLevel0[F]
     NotFound(Json.obj(
       "status" -> Json.fromString("not-found"),
       key -> Encoder[A].apply(value)
+    ))
+
+  protected def badGateway[A : Encoder](reason: A): F[Response[F]] =
+    BadGateway(Json.obj(
+      "status" -> Json.fromString("bad-gateway"),
+      "reason" -> Encoder[A].apply(reason)
+    ))
+
+  protected def internalServerError[A : Encoder](reason: A): F[Response[F]] =
+    InternalServerError(Json.obj(
+      "status" -> Json.fromString("internal-server-error"),
+      "reason" -> Encoder[A].apply(reason)
     ))
 }
 

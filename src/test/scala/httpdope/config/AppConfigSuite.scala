@@ -19,7 +19,8 @@ package config
 
 import monix.eval.Task
 import httpdope.echo._
-import httpdope.vimeo.models.{VimeoAccessToken, VimeoConfig}
+import httpdope.vimeo.VimeoConfig
+import httpdope.vimeo.VimeoAccessToken
 
 class AppConfigSuite extends AsyncBaseSuite.OfTask {
   testEffect("loads config (application.test.conf)") {

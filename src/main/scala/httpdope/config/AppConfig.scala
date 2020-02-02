@@ -20,7 +20,7 @@ import cats.implicits._
 import cats.effect.Sync
 import com.typesafe.config.{Config, ConfigException}
 import httpdope.echo.{MaxmindEdition, MaxmindGeoIPConfig, MaxmindLicenceKey}
-import httpdope.vimeo.models.{VimeoAccessToken, VimeoConfig}
+import httpdope.vimeo.{VimeoConfig, VimeoAccessToken}
 
 final case class AppConfig(
   source: ConfigSource,

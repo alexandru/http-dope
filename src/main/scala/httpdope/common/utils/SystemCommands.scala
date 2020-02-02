@@ -27,7 +27,7 @@ import scala.util.control.NonFatal
 
 final class SystemCommands[F[_]] private (cache: Cached[F, Option[String]], blocker: Blocker)
   (implicit F: Sync[F], cs: ContextShift[F])
-  extends LazyLogging {
+  extends StrictLogging {
 
   /**
     * Task for getting the server's IP.
