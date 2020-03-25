@@ -40,9 +40,10 @@ object Server {
       blazeClient <- BlazeClientBuilder[F](global).stream
       httpClient = HTTPClient(blazeClient, blocker)
       geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
-      system <- Stream.eval(SystemCommands[F](blocker))
+      cacheManager <- Stream.resource(CacheManager[F])
+      system <- Stream.eval(SystemCommands[F](config.systemCommands, cacheManager, blocker))
 
-      vimeoController <- Stream.eval(vimeo.Controller[F](config.vimeo, blazeClient, system))
+      vimeoController <- Stream.eval(vimeo.Controller[F](config.vimeo, cacheManager, blazeClient, system))
       allRoutes = Router(
         "/" -> static.Controller[F](config.httpServer, blocker).routes,
         "/echo" -> echo.Controller[F](geoIP, system).routes,

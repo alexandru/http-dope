@@ -1,14 +1,15 @@
 
-val Http4sVersion = "0.21.0-RC2"
-val CirceVersion = "0.13.0-RC1"
+val Http4sVersion = "0.21.1"
+val CirceVersion = "0.13.0"
 val LogbackVersion = "1.2.3"
 val MonixVersion = "3.1.0"
 val TypesafeConfigVersion = "1.4.0"
 val NewtypeVersion = "0.4.3"
-val ScalaTestVersion = "3.1.0"
-val SilencerVersion = "1.4.4"
+val ScalaTestVersion = "3.1.1"
+val SilencerVersion = "1.6.0"
 val GeoIP2Version = "2.12.0"
-val CommonsCompressVersion = "1.19"
+val CommonsCompressVersion = "1.20"
+val EHCacheVersion = "3.8.1"
 
 // Used below for parsing versions, specified via git tags
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
@@ -51,6 +52,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.http4s" %% "http4s-twirl" % Http4sVersion,
       "org.apache.commons" % "commons-compress" % CommonsCompressVersion,
+      "org.ehcache" % "ehcache" % EHCacheVersion,
       "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     ),
 

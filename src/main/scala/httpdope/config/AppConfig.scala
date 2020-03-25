@@ -16,16 +16,22 @@
 
 package httpdope.config
 
+import java.util.concurrent.TimeUnit
+
 import cats.implicits._
 import cats.effect.Sync
 import com.typesafe.config.{Config, ConfigException}
+import httpdope.common.utils.{CacheEvictionPolicy, SystemCommandsConfig}
 import httpdope.echo.{MaxmindEdition, MaxmindGeoIPConfig, MaxmindLicenceKey}
-import httpdope.vimeo.{VimeoConfig, VimeoAccessToken}
+import httpdope.vimeo.models.{VimeoAccessToken, VimeoCacheEvictionPolicy, VimeoConfig}
+
+import scala.concurrent.duration._
 
 final case class AppConfig(
   source: ConfigSource,
   httpServer: HttpServerConfig,
   maxmindGeoIP: MaxmindGeoIPConfig,
+  systemCommands: SystemCommandsConfig,
   vimeo: VimeoConfig
 )
 
@@ -58,6 +64,19 @@ object AppConfig {
     def getStringOption[A](config: Config, key: String): Option[String] =
       if (config.hasPath(key)) Option(config.getString(key)) else None
 
+    def getLongOption[A](config: Config, key: String): Option[Long] =
+      if (config.hasPath(key)) Option(config.getLong(key)) else None
+
+    def getDurationOption[A](config: Config, key: String): Option[FiniteDuration] =
+      if (config.hasPath(key)) Option(config.getDuration(key, TimeUnit.MILLISECONDS).millis) else None
+
+    def getCachePolicy(config: Config, prefix: String): CacheEvictionPolicy =
+      CacheEvictionPolicy(
+        heapItems = config.getLong(s"$prefix.heapItems"),
+        offHeapMB = getLongOption(config, s"$prefix.offHeapMB"),
+        timeToLiveExpiration = getDurationOption(config, s"$prefix.timeToLiveExpiration")
+      )
+
     Sync[F].delay {
       AppConfig(
         source,
@@ -82,7 +101,14 @@ object AppConfig {
           }
         ),
         vimeo = VimeoConfig(
-          accessToken = getStringOption(config, "vimeo.accessToken").map(VimeoAccessToken.apply)
+          accessToken = getStringOption(config, "vimeo.accessToken").map(VimeoAccessToken.apply),
+          cache = VimeoCacheEvictionPolicy(
+            longTerm = getCachePolicy(config, "vimeo.cache.longTerm"),
+            shortTerm = getCachePolicy(config, "vimeo.cache.shortTerm"),
+          )
+        ),
+        systemCommands = SystemCommandsConfig(
+          cache = getCachePolicy(config, "systemCommands.cache"),
         )
       )
     }

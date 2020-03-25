@@ -83,6 +83,6 @@ object BaseController {
       }
 
     implicit def entityEncoder[A : Encoder]: EntityEncoder[F, A] =
-      circeInstances.jsonEncoder[F](Sync[F]).contramap(Encoder[A].apply)
+      circeInstances.jsonEncoder[F].contramap(Encoder[A].apply)
   }
 }

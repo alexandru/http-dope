@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package httpdope.vimeo
+package httpdope.vimeo.models
 
-/**
-  * Configuration for Vimeo's API.
-  */
-final case class VimeoConfig(
-  accessToken: Option[VimeoAccessToken]
+import httpdope.common.utils.CacheEvictionPolicy
+
+final case class VimeoCacheEvictionPolicy(
+  longTerm: CacheEvictionPolicy,
+  shortTerm: CacheEvictionPolicy
 )

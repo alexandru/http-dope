@@ -16,16 +16,18 @@
 
 package httpdope.common.utils
 
-import cats.implicits._
 import java.io.{BufferedReader, InputStreamReader}
-
 import cats.effect.{Blocker, Clock, Concurrent, ContextShift, Sync}
+import cats.implicits._
 import httpdope.common.models.IP
-
-import scala.concurrent.duration._
+import httpdope.common.utils.CacheManager.Cache
 import scala.util.control.NonFatal
 
-final class SystemCommands[F[_]] private (cache: Cached[F, Option[String]], blocker: Blocker)
+final case class SystemCommandsConfig(
+  cache: CacheEvictionPolicy
+)
+
+final class SystemCommands[F[_]] private (cache: Cache[F, String, Option[String]], blocker: Blocker)
   (implicit F: Sync[F], cs: ContextShift[F])
   extends StrictLogging {
 
@@ -33,15 +35,15 @@ final class SystemCommands[F[_]] private (cache: Cached[F, Option[String]], bloc
     * Task for getting the server's IP.
     */
   val getServerIP: F[Option[IP]] = {
-    executeCommand("dig +short myip.opendns.com @resolver1.opendns.com", 1.hour)
+    executeCommand("dig +short myip.opendns.com @resolver1.opendns.com")
       .map(_.map(IP(_)))
   }
 
   /**
     * Execute a system command and caches it in internal memory.
     */
-  def executeCommand(cmd: String, expiry: FiniteDuration): F[Option[String]] =
-    cache.getOrUpdate(cmd, expiry, executeCommandUncached(cmd))
+  def executeCommand(cmd: String): F[Option[String]] =
+    cache.getOrEvalIfAbsent(cmd, executeCommandUncached(cmd))
 
   /**
     * Execute a system command and returns the result.
@@ -71,11 +73,14 @@ final class SystemCommands[F[_]] private (cache: Cached[F, Option[String]], bloc
 }
 
 object SystemCommands {
-  def apply[F[_]](blocker: Blocker)
-    (implicit F: Concurrent[F], cs: ContextShift[F], clock: Clock[F]): F[SystemCommands[F]] = {
+  def apply[F[_]](
+    config: SystemCommandsConfig,
+    cacheManager: CacheManager[F],
+    blocker: Blocker)
+    (implicit F: Concurrent[F], cs: ContextShift[F]): F[SystemCommands[F]] = {
 
     for {
-      cache <- Cached.apply[F, Option[String]]
+      cache <- cacheManager.createCache[String, Option[String]]("SystemCommands", config.cache)
     } yield {
       new SystemCommands[F](cache, blocker)
     }

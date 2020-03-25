@@ -14,23 +14,9 @@
  * limitations under the License.
  */
 
-package httpdope.vimeo
+package httpdope.vimeo.models
 
 import io.circe.generic.JsonCodec
-
-@JsonCodec
-final case class RawFileJSON(
-  width: Option[Int],
-  height: Option[Int],
-  size: Option[String],
-  public_name: String,
-  extension: String,
-  download_name: String,
-  download_url: String,
-  is_cold: Option[Boolean],
-  is_defrosting: Option[Boolean],
-  range: Option[String]
-)
 
 @JsonCodec
 final case class DownloadLinksJSON(

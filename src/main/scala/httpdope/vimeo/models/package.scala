@@ -16,33 +16,8 @@
 
 package httpdope.vimeo
 
-import io.circe.generic.JsonCodec
+import io.estatico.newtype.macros.newtype
 
-@JsonCodec
-final case class VimeoConfigJSON(
-  uri: String,
-  name: String,
-  description: Option[String],
-  link: String,
-  duration: Option[Long],
-  width: Option[Int],
-  height: Option[Int],
-  pictures: VimeoPicturesJSON
-)
-
-@JsonCodec
-final case class VimeoPicturesJSON(
-  uri: String,
-  active: Boolean,
-  `type`: Option[String],
-  sizes: List[PicturesEntrySizeJSON],
-  resource_key: Option[String]
-)
-
-@JsonCodec
-final case class PicturesEntrySizeJSON(
-  width: Int,
-  height: Int,
-  link: String,
-  link_with_play_button: Option[String]
-)
+package object models {
+  @newtype case class VimeoAccessToken(value: String)
+}

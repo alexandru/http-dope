@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package httpdope
+package httpdope.vimeo.models
 
-import io.estatico.newtype.macros.newtype
+import io.circe.generic.JsonCodec
 
-package object vimeo {
-  @newtype case class VimeoAccessToken(value: String)
-}
+@JsonCodec
+final case class RawFileJSON(
+  width: Option[Int],
+  height: Option[Int],
+  size: Option[String],
+  public_name: String,
+  extension: String,
+  download_name: String,
+  download_url: String,
+  is_cold: Option[Boolean],
+  is_defrosting: Option[Boolean],
+  range: Option[String]
+)

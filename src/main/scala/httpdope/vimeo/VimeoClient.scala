@@ -16,20 +16,26 @@
 
 package httpdope.vimeo
 
-import cats.implicits._
 import cats.data.EitherT
-import cats.effect.{Clock, Concurrent, Sync}
+import cats.effect.{Concurrent, Sync}
+import cats.implicits._
 import httpdope.common.models.{HttpError, JSONError, WebError}
-import httpdope.common.utils.{Cached, StrictLogging}
+import httpdope.common.utils.CacheManager.Cache
+import httpdope.common.utils.{CacheManager, StrictLogging}
+import httpdope.vimeo.models.CacheTTL.{LongTerm, NoCache, ShortTerm}
+import httpdope.vimeo.models._
 import io.circe.Decoder
+import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.headers.Accept
 import org.http4s.util.CaseInsensitiveString
-import org.http4s._
-import scala.concurrent.duration._
 
-final class VimeoClient[F[_]] private (accessToken: VimeoAccessToken, cache: Cached[F, Either[WebError, AnyRef]], client: Client[F])
+final class VimeoClient[F[_]] private (
+  accessToken: VimeoAccessToken,
+  shortTerm: Cache[F, String, Either[WebError, AnyRef]],
+  longTerm: Cache[F, String, Either[WebError, AnyRef]],
+  client: Client[F])
   (implicit F: Sync[F])
   extends Http4sClientDsl[F] with StrictLogging {
 
@@ -37,22 +43,32 @@ final class VimeoClient[F[_]] private (accessToken: VimeoAccessToken, cache: Cac
     * Fetches the download links from Vimeo for a public video with the
     * given `uid` and for which the download is allowed (Plus accounts and up).
     */
-  def getDownloadLinks(uid: String, exp: FiniteDuration, agent: Option[Header], extra: Option[Header]*): EitherT[F, WebError, DownloadLinksJSON] =
+  def getDownloadLinks(uid: String, ttl: CacheTTL, agent: Option[Header], extra: Option[Header]*): EitherT[F, WebError, DownloadLinksJSON] =
     EitherT(
-      cache
-        .getOrUpdate(uid + "/links/" + exp.toMillis.toString, exp, uncachedDownloadLinks(uid, agent, extra:_*).widen[AnyRef].value)
-        .asInstanceOf[F[Either[WebError, DownloadLinksJSON]]]
+      getOrEvalIfAbsent(uid + "/links/", ttl, uncachedDownloadLinks(uid, agent, extra:_*).value)
     )
 
   /**
     * Fetches thumbnail links.
     */
-  def getPictures(uid: String, exp: FiniteDuration, agent: Option[Header], extra: Option[Header]*): EitherT[F, WebError, VimeoConfigJSON] =
+  def getPictures(uid: String, ttl: CacheTTL, agent: Option[Header], extra: Option[Header]*): EitherT[F, WebError, VimeoConfigJSON] =
     EitherT(
-      cache
-        .getOrUpdate(uid + "/pictures/" + exp.toMillis.toString, exp, uncachedPictures(uid, agent, extra:_*).widen[AnyRef].value)
-        .asInstanceOf[F[Either[WebError, VimeoConfigJSON]]]
+      getOrEvalIfAbsent(uid + "/pictures/", ttl, uncachedPictures(uid, agent, extra:_*).value)
     )
+
+  private def getOrEvalIfAbsent[A](key: String, ttl: CacheTTL, task: F[Either[WebError, A]]): F[Either[WebError, A]] = {
+    val cache = ttl match {
+      case LongTerm => longTerm
+      case ShortTerm => shortTerm
+      case NoCache => null
+    }
+    if (cache == null) {
+      task
+    } else {
+      cache.getOrEvalIfAbsent(key, task.asInstanceOf[F[Either[WebError, AnyRef]]])
+        .asInstanceOf[F[Either[WebError, A]]]
+    }
+  }
 
   private def uncachedPictures(uid: String, agent: Option[Header], extra: Option[Header]*): EitherT[F, WebError, VimeoConfigJSON] =
     uncachedGET[VimeoConfigJSON](uid, s"https://api.vimeo.com/videos/$uid?access_token=${accessToken.value}&per_page=100", agent, extra:_*)
@@ -103,11 +119,22 @@ object VimeoClient {
   /**
     * Builds a [[VimeoClient]] resource.
     */
-  def apply[F[_]](accessToken: VimeoAccessToken, client: Client[F])
-    (implicit F: Concurrent[F], clock: Clock[F]): F[VimeoClient[F]] = {
+  def apply[F[_]](
+    accessToken: VimeoAccessToken,
+    cacheEvictionPolicy: VimeoCacheEvictionPolicy,
+    cacheManager: CacheManager[F],
+    client: Client[F])
+    (implicit F: Concurrent[F]): F[VimeoClient[F]] = {
 
-    Cached[F, Either[WebError, AnyRef]].map { cache =>
-      new VimeoClient(accessToken, cache, client)
+    for {
+      shortTerm <- cacheManager.createCache[String, Either[WebError, AnyRef]](
+        "vimeo.shortTerm",
+        cacheEvictionPolicy.shortTerm)
+      longTerm <- cacheManager.createCache[String, Either[WebError, AnyRef]](
+        "vimeo.longTerm",
+        cacheEvictionPolicy.longTerm)
+    } yield {
+      new VimeoClient(accessToken, shortTerm, longTerm, client)
     }
   }
 }
