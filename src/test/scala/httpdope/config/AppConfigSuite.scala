@@ -17,10 +17,12 @@
 package httpdope
 package config
 
+import httpdope.common.utils.{CacheEvictionPolicy, SystemCommandsConfig}
 import monix.eval.Task
 import httpdope.echo._
-import httpdope.vimeo.VimeoAccessToken
-import httpdope.vimeo.models.VimeoConfig
+import httpdope.vimeo.models.{VimeoAccessToken, VimeoCacheEvictionPolicy, VimeoConfig}
+
+import scala.concurrent.duration._
 
 class AppConfigSuite extends AsyncBaseSuite.OfTask {
   testEffect("loads config (application.test.conf)") {
@@ -42,8 +44,27 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             edition = MaxmindEdition.GeoLite2Country,
             refreshDBOnRun = true
           ),
+          systemCommands = SystemCommandsConfig(
+            cache = CacheEvictionPolicy(
+              heapItems = 200,
+              offHeapMB = Some(10),
+              timeToLiveExpiration = Some(2.hours)
+            )
+          ),
           vimeo = VimeoConfig(
-            accessToken = Some(VimeoAccessToken("my-access-token"))
+            accessToken = Some(VimeoAccessToken("my-access-token")),
+            cache = VimeoCacheEvictionPolicy(
+              shortTerm = CacheEvictionPolicy(
+                heapItems = 200,
+                offHeapMB = Some(10),
+                timeToLiveExpiration = Some(10.minutes)
+              ),
+              longTerm = CacheEvictionPolicy(
+                heapItems = 300,
+                offHeapMB = Some(20),
+                timeToLiveExpiration = Some(10.hours)
+              )
+            )
           )
         ))
       }
@@ -69,8 +90,27 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             edition = MaxmindEdition.GeoLite2City,
             refreshDBOnRun = false
           ),
+          systemCommands = SystemCommandsConfig(
+            cache = CacheEvictionPolicy(
+              heapItems = 100,
+              offHeapMB = None,
+              timeToLiveExpiration = Some(1.hour)
+            )
+          ),
           vimeo = VimeoConfig(
-            accessToken = None
+            accessToken = None,
+            cache = VimeoCacheEvictionPolicy(
+              shortTerm = CacheEvictionPolicy(
+                heapItems = 100,
+                offHeapMB = None,
+                timeToLiveExpiration = Some(1.hour)
+              ),
+              longTerm = CacheEvictionPolicy(
+                heapItems = 100,
+                offHeapMB = Some(1),
+                timeToLiveExpiration = Some(24.hours)
+              )
+            )
           )
         ))
       }
