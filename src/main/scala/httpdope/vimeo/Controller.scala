@@ -17,7 +17,7 @@
 package httpdope.vimeo
 
 import cats.data.EitherT
-import cats.effect.{Clock, Concurrent, Sync}
+import cats.effect.{Concurrent, Resource, Sync}
 import cats.implicits._
 import httpdope.common.http.{BaseController, ControllerLike, EmptyController}
 import httpdope.common.models.{HttpError, JSONError, WebError}
@@ -29,7 +29,6 @@ import io.circe.syntax._
 import org.http4s.client.Client
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Header, HttpRoutes, Request, Response, Status}
-
 import scala.concurrent.duration._
 
 class Controller[F[_]](client: VimeoClient[F], system: SystemCommands[F])
@@ -199,12 +198,15 @@ object Controller {
     cacheManager: CacheManager[F],
     client: Client[F],
     system: SystemCommands[F])
-    (implicit F: Concurrent[F]): F[ControllerLike[F]] = {
+    (implicit F: Concurrent[F]): Resource[F, ControllerLike[F]] = {
 
     config.accessToken match {
-      case None => F.pure(new EmptyController[F]())
+      case None =>
+        Resource.pure[F, ControllerLike[F]](new EmptyController[F]())
       case Some(token) =>
-        VimeoClient[F](token, config.cache, cacheManager, client).map { client =>
+        for {
+          client <- VimeoClient[F](token, config.cache, cacheManager, client)
+        } yield {
           new Controller(client, system)
         }
     }

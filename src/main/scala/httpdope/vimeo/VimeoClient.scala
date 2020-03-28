@@ -17,7 +17,7 @@
 package httpdope.vimeo
 
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Resource, Sync}
 import cats.implicits._
 import httpdope.common.models.{HttpError, JSONError, WebError}
 import httpdope.common.utils.CacheManager.Cache
@@ -124,7 +124,7 @@ object VimeoClient {
     cacheEvictionPolicy: VimeoCacheEvictionPolicy,
     cacheManager: CacheManager[F],
     client: Client[F])
-    (implicit F: Concurrent[F]): F[VimeoClient[F]] = {
+    (implicit F: Concurrent[F]): Resource[F, VimeoClient[F]] = {
 
     for {
       shortTerm <- cacheManager.createCache[String, Either[WebError, AnyRef]](

@@ -17,7 +17,7 @@
 package httpdope.common.utils
 
 import java.io.{BufferedReader, InputStreamReader}
-import cats.effect.{Blocker, Clock, Concurrent, ContextShift, Sync}
+import cats.effect.{Blocker, Concurrent, ContextShift, Resource, Sync}
 import cats.implicits._
 import httpdope.common.models.IP
 import httpdope.common.utils.CacheManager.Cache
@@ -77,7 +77,7 @@ object SystemCommands {
     config: SystemCommandsConfig,
     cacheManager: CacheManager[F],
     blocker: Blocker)
-    (implicit F: Concurrent[F], cs: ContextShift[F]): F[SystemCommands[F]] = {
+    (implicit F: Concurrent[F], cs: ContextShift[F]): Resource[F, SystemCommands[F]] = {
 
     for {
       cache <- cacheManager.createCache[String, Option[String]]("SystemCommands", config.cache)

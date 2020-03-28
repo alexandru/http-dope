@@ -38,10 +38,10 @@ final class CacheManager[F[_]](private val manager: EHCacheManager)(implicit F: 
   /**
     * Creates a named cache with the given eviction policy.
     */
-  def createCache[K, V](name: String, config: CacheEvictionPolicy)
-    (implicit K: ClassTag[K], V: ClassTag[V]): F[Cache[F, K, V]] = {
+  def createCache[K, V](alias: String, config: CacheEvictionPolicy)
+    (implicit K: ClassTag[K], V: ClassTag[V]): Resource[F, Cache[F, K, V]] = {
 
-    F.delay {
+    Resource(F.delay {
       val classK = K.runtimeClass.asInstanceOf[Class[K]]
       val classV = V.runtimeClass.asInstanceOf[Class[V]]
 
@@ -58,9 +58,10 @@ final class CacheManager[F[_]](private val manager: EHCacheManager)(implicit F: 
         policy.fold(init)((expiry: ExpiryPolicy[_ >: K, _ >: V]) => init.withExpiry(expiry))
       }
 
-      val cache = manager.createCache(name, configBuilder)
-      new Cache(cache)
-    }
+      val cache = manager.createCache(alias, configBuilder)
+      val ref = new Cache(cache)
+      (ref, F.delay { manager.removeCache(alias) })
+    })
   }
 }
 
@@ -72,6 +73,7 @@ object CacheManager {
     Resource(F.delay {
       val manager = CacheManagerBuilder.newCacheManagerBuilder.build()
       val ref = new CacheManager(manager)
+      manager.init()
       (ref, F.delay { manager.close() })
     })
 
