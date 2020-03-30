@@ -98,7 +98,7 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             )
           ),
           vimeo = VimeoConfig(
-            accessToken = None,
+            accessToken = Option(System.getenv("VIMEO_ACCESS_TOKEN")).filter(_.nonEmpty).map(VimeoAccessToken(_)),
             cache = VimeoCacheEvictionPolicy(
               shortTerm = CacheEvictionPolicy(
                 heapItems = 100,
