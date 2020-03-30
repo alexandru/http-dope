@@ -15,7 +15,7 @@ val EHCacheVersion = "3.8.1"
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 
 lazy val root = (project in file("."))
-  .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(JavaAppPackaging)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(SbtTwirl)
   .enablePlugins(DockerPlugin)
