@@ -11,7 +11,8 @@
     </encoder>
   </appender>
 
-  <logger name="org.alexn.httpdope" level="INFO" />
+  <logger name="httpdope" level="INFO" />
+  <logger name="org.http4s" level="INFO" />
   <root level="WARN">
     <appender-ref ref="STDOUT" />
   </root>
