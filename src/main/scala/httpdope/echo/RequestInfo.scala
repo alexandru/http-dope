@@ -18,7 +18,6 @@ package httpdope.echo
 
 import httpdope.common.models.IP
 import io.circe.generic.JsonCodec
-import scala.collection.immutable.ListMap
 
 @JsonCodec
 final case class RequestInfo(
@@ -34,5 +33,5 @@ final case class ParsedRequest(
   forwardedFor: Option[String],
   via: Option[String],
   agent: Option[String],
-  headers: ListMap[String, String],
+  headers: Map[String, String],
 )
