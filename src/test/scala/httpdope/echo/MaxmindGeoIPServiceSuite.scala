@@ -46,19 +46,10 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
     service.use { service =>
       for {
-        info <- service.findIP(IP("185.216.34.232"))
+        info <- service.findIP(IP("109.101.232.97"))
       } yield {
-        assert(info === Some(
-          GeoIPInfo(
-            IP("185.216.34.232"),
-            Some(GeoIPCountry("AT",Some("Austria"), isInEuropeanUnion = true)),
-            Some(GeoIPCountry("AT", Some("Austria"), isInEuropeanUnion = true)),
-            None,
-            Some(GeoIPContinent("EU", Some("Europe"))),
-            Some(GeoIPCity("Vienna")),
-            Some(GeoIPLocation(48.2994,16.3479,Some("Europe/Vienna"),Some(200))),
-            Some(GeoIPPostalCode("1210")),
-          )))
+        assert(info.flatMap(_.country) === Some(GeoIPCountry("RO",Some("Romania"), isInEuropeanUnion = true)))
+        assert(info.flatMap(_.continent) === Some(GeoIPContinent("EU", Some("Europe"))))
       }
     }
   }

@@ -22,9 +22,6 @@ import io.estatico.newtype.macros.newtype
 
 package object models {
   @newtype case class IP(value: String) {
-    /**
-      * Returns `true` if this is a valid public IP, `false` otherwise.
-      */
     def isPublicIP: Boolean =
       IPUtils.isPublicIP(this)
   }
