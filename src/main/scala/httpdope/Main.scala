@@ -31,7 +31,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{AutoSlash, Logger}
 
-object Server {
+object Server extends LazyLogging {
 
   def stream[F[_]](implicit F: ConcurrentEffect[F], timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
     val stream = for {
@@ -40,22 +40,18 @@ object Server {
       blazeClient <- BlazeClientBuilder[F](global).stream
       httpClient = HTTPClient(blazeClient, blocker)
       geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
-      _ <- Stream.eval(F.delay(println("PIZDA")))
       cacheManager <- Stream.resource(CacheManager[F])
-      _ <- Stream.eval(F.delay(println("PULA")))
       system <- Stream.resource(SystemCommands[F](config.systemCommands, cacheManager, blocker))
-      _ <- Stream.eval(F.delay(println("COAIELE")))
-
       vimeoController <- Stream.resource(vimeo.Controller[F](config.vimeo, cacheManager, blazeClient, system))
-      _ <- Stream.eval(F.delay(println("RAZBOAIELE")))
+
       allRoutes = Router(
         "/" -> static.Controller[F](config.httpServer, blocker).routes,
         "/echo" -> echo.Controller[F](geoIP, system).routes,
-        "/vimeo" -> vimeoController.routes
+        "/vimeo" -> vimeoController.routes,
       )
 
       // With all middleware
-      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(
+      finalHttpApp = Logger.httpApp(logHeaders = false, logBody = false)(
         CanonicalRedirectMiddleware(config.httpServer)(
           HttpsRedirectMiddleware(config.httpServer)(
             AutoSlash(
@@ -65,6 +61,9 @@ object Server {
           .orNotFound
       )
 
+      _ <- Stream.eval(F.delay {
+        logger.info(s"Starting server at ${config.httpServer.address.value}:${config.httpServer.port.value}")
+      })
       exitCode <- BlazeServerBuilder[F]
         .bindHttp(config.httpServer.port.value, config.httpServer.address.value)
         .withHttpApp(finalHttpApp)

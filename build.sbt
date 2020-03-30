@@ -1,5 +1,5 @@
 
-val Http4sVersion = "0.21.1"
+val Http4sVersion = "0.21.2"
 val CirceVersion = "0.13.0"
 val LogbackVersion = "1.2.3"
 val MonixVersion = "3.1.0"
@@ -7,7 +7,7 @@ val TypesafeConfigVersion = "1.4.0"
 val NewtypeVersion = "0.4.3"
 val ScalaTestVersion = "3.1.1"
 val SilencerVersion = "1.6.0"
-val GeoIP2Version = "2.12.0"
+val GeoIP2Version = "2.13.1"
 val CommonsCompressVersion = "1.20"
 val EHCacheVersion = "3.8.1"
 
@@ -59,6 +59,9 @@ lazy val root = (project in file("."))
     addCompilerPlugin("org.typelevel"   %% "kind-projector"     % "0.10.3"),
     addCompilerPlugin("com.olegpy"      %% "better-monadic-for" % "0.3.1"),
     addCompilerPlugin("com.github.ghik" %  "silencer-plugin"    % SilencerVersion cross CrossVersion.full),
+
+    // Avoids classloader issues
+    fork := true,
 
     organizationName := "Alexandru Nedelcu",
     startYear := Some(2020),
