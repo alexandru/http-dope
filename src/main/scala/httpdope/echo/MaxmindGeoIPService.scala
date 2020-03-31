@@ -169,7 +169,14 @@ object MaxmindGeoIPService extends LazyLogging {
       client <- BlazeClientBuilder[F](global).resource
       config <- Resource.liftF(config.fold(AppConfig.loadFromEnv)(F.pure))
       httpClient = HTTPClient(client, blocker)
-      ref <- apply(config.maxmindGeoIP, httpClient, blocker)
+      ref <- Resource.suspend[F, MaxmindGeoIPService[F]](F.suspend {
+        config.maxmindGeoIP match {
+          case Some(cfg) =>
+            F.pure(apply(cfg, httpClient, blocker))
+          case None =>
+            F.raiseError(new IllegalArgumentException("Maxmind DB is not enabled in config"))
+        }
+      })
     } yield {
       ref
     }

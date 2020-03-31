@@ -39,7 +39,12 @@ object Server extends LazyLogging {
       (_, blocker) <- Stream.resource(Schedulers.createBlockingContext())
       blazeClient <- BlazeClientBuilder[F](global).stream
       httpClient = HTTPClient(blazeClient, blocker)
-      geoIP <- Stream.resource(MaxmindGeoIPService(config.maxmindGeoIP, httpClient, blocker))
+      geoIP <- config.maxmindGeoIP match {
+        case None =>
+          Stream.eval(F.pure(None))
+        case Some(cfg) =>
+          Stream.resource(MaxmindGeoIPService(cfg, httpClient, blocker).map(Some(_)))
+      }
       cacheManager <- Stream.resource(CacheManager[F])
       system <- Stream.resource(SystemCommands[F](config.systemCommands, cacheManager, blocker))
       vimeoController <- Stream.resource(vimeo.Controller[F](config.vimeo, cacheManager, blazeClient, system))

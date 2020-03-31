@@ -39,7 +39,7 @@ class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
   def testQuery(refreshDBOnRun: Boolean) = {
     val service = for {
       cfg <- Resource.liftF(AppConfig.loadFromEnv)
-      ref <- MaxmindGeoIPService.test[Task](Some(cfg.copy(maxmindGeoIP = cfg.maxmindGeoIP.copy(refreshDBOnRun = refreshDBOnRun))))
+      ref <- MaxmindGeoIPService.test[Task](Some(cfg.copy(maxmindGeoIP = cfg.maxmindGeoIP.map(_.copy(refreshDBOnRun = refreshDBOnRun)))))
     } yield {
       ref
     }

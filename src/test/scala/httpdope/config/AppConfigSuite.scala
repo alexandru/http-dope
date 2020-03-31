@@ -39,11 +39,11 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             canonicalRedirect = true,
             forceHTTPS = false
           ),
-          maxmindGeoIP = MaxmindGeoIPConfig(
+          maxmindGeoIP = Some(MaxmindGeoIPConfig(
             apiKey = MaxmindLicenceKey("test-api-key"),
             edition = MaxmindEdition.GeoLite2Country,
             refreshDBOnRun = true
-          ),
+          )),
           systemCommands = SystemCommandsConfig(
             cache = CacheEvictionPolicy(
               heapItems = 200,
@@ -85,11 +85,15 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
             canonicalRedirect = false,
             forceHTTPS = true
           ),
-          maxmindGeoIP = MaxmindGeoIPConfig(
-            apiKey = MaxmindLicenceKey(System.getenv("DOPE_MAXMIND_GEOIP_API_KEY")),
-            edition = MaxmindEdition.GeoLite2City,
-            refreshDBOnRun = false
-          ),
+          maxmindGeoIP = Option(System.getenv("DOPE_MAXMIND_GEOIP_API_KEY")) match {
+            case None => None
+            case Some(value) =>
+              Some(MaxmindGeoIPConfig(
+                apiKey = MaxmindLicenceKey(value),
+                edition = MaxmindEdition.GeoLite2City,
+                refreshDBOnRun = false
+              ))
+          },
           systemCommands = SystemCommandsConfig(
             cache = CacheEvictionPolicy(
               heapItems = 100,

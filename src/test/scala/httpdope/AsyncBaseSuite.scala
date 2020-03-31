@@ -38,14 +38,6 @@ trait AsyncBaseSuite[F[_]] extends AsyncFunSuite {
       ((), reset)
     })
 
-  protected def withSystemEnv(key: String, value: Option[String]): Resource[F, Unit] =
-    Resource(F.delay {
-      val oldValue = Option(System.getenv(key)).filter(_.nonEmpty)
-      value.fold(System.clearProperty(key))(System.setProperty(key, _))
-      val reset = F.delay { oldValue.fold(System.clearProperty(key))(System.setProperty(key, _)); () }
-      ((), reset)
-    })
-
   private[this] def unsafeToFuture[A](fun: F[A]): Future[A] = {
     val p = Promise[A]()
     F.runAsync(fun)(result => IO(p.complete(result.toTry))).unsafeRunSync()

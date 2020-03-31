@@ -30,7 +30,7 @@ import scala.concurrent.duration._
 final case class AppConfig(
   source: ConfigSource,
   httpServer: HttpServerConfig,
-  maxmindGeoIP: MaxmindGeoIPConfig,
+  maxmindGeoIP: Option[MaxmindGeoIPConfig],
   systemCommands: SystemCommandsConfig,
   vimeo: VimeoConfig
 )
@@ -87,19 +87,24 @@ object AppConfig {
           canonicalRedirect = config.getBoolean("http.server.canonicalRedirect"),
           forceHTTPS = config.getBoolean("http.server.forceHTTPS")
         ),
-        maxmindGeoIP = MaxmindGeoIPConfig(
-          apiKey = MaxmindLicenceKey(config.getString("maxmindGeoIP.apiKey")),
-          refreshDBOnRun = config.getBoolean("maxmindGeoIP.refreshDBOnRun"),
-          edition = {
-            val key = "maxmindGeoIP.edition"
-            val value = config.getString(key)
-            MaxmindEdition(value)
-              .getOrElse(throw new ConfigException.WrongType(
-                config.getValue(key).origin(),
-                s"Unexpected MaxmindEdition ID: $value"
-              ))
-          }
-        ),
+        maxmindGeoIP = {
+          if (config.hasPath("maxmindGeoIP.isEnabled") && config.getBoolean("maxmindGeoIP.isEnabled") && config.hasPath("maxmindGeoIP.apiKey"))
+            Some(MaxmindGeoIPConfig(
+              apiKey = MaxmindLicenceKey(config.getString("maxmindGeoIP.apiKey")),
+              refreshDBOnRun = config.getBoolean("maxmindGeoIP.refreshDBOnRun"),
+              edition = {
+                val key = "maxmindGeoIP.edition"
+                val value = config.getString(key)
+                MaxmindEdition(value)
+                  .getOrElse(throw new ConfigException.WrongType(
+                    config.getValue(key).origin(),
+                    s"Unexpected MaxmindEdition ID: $value"
+                  ))
+              }
+            ))
+          else
+            None
+        },
         vimeo = VimeoConfig(
           accessToken = getStringOption(config, "vimeo.accessToken").map(VimeoAccessToken.apply),
           cache = VimeoCacheEvictionPolicy(

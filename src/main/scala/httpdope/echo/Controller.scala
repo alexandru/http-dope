@@ -26,7 +26,7 @@ import org.http4s.{HttpRoutes, Request, Response}
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 
-final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemCommands[F])
+final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
   (implicit F: Sync[F], timer: Timer[F])
   extends BaseController[F] {
 
@@ -79,9 +79,9 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemComman
     F.suspend {
       val clientIP = extractIPFromRequest(request)
       for {
-        clientGeoIP <- clientIP.fold(geoIPEmptyResult)(geoIP.findIP)
+        clientGeoIP <- clientIP.fold(geoIPEmptyResult)(findGeoIP)
         serverIP    <- system.getServerIP
-        serverGeoIP <- serverIP.fold(geoIPEmptyResult)(geoIP.findIP)
+        serverGeoIP <- serverIP.fold(geoIPEmptyResult)(findGeoIP)
         response <- buildInfo(request, clientGeoIP, serverIP, serverGeoIP)
       } yield {
         response
@@ -98,7 +98,7 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemComman
   def getGeoIP(request: Request[F]): F[Response[F]] = {
     F.suspend {
       val ip = extractIPFromRequest(request)
-      ip.fold(F.pure(Option.empty[GeoIPInfo]))(geoIP.findIP).flatMap {
+      ip.fold(F.pure(Option.empty[GeoIPInfo]))(findGeoIP).flatMap {
         case None =>
           notFound("ip", ip)
         case Some(info) =>
@@ -112,7 +112,7 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemComman
       case None =>
         notFound("server-ip", None)
       case ipOpt @ Some(ip) =>
-        geoIP.findIP(ip).flatMap {
+        findGeoIP(ip).flatMap {
           case None =>
             notFound("server-ip", ipOpt)
           case Some(info) =>
@@ -129,6 +129,13 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemComman
     } yield r
   }
 
+  private def findGeoIP(ip: IP): F[Option[GeoIPInfo]] = {
+    geoIP match {
+      case None => F.pure(None)
+      case Some(s) => s.findIP(ip)
+    }
+  }
+
   private def geoIPEmptyResult: F[Option[GeoIPInfo]] = {
     F.pure(Option.empty[GeoIPInfo])
   }
@@ -142,7 +149,7 @@ final class Controller[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemComman
 
 object Controller {
   /** Builder. */
-  def apply[F[_]](geoIP: MaxmindGeoIPService[F], system: SystemCommands[F])
+  def apply[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
     (implicit F: Sync[F], timer: Timer[F]): Controller[F] = {
 
     new Controller(geoIP, system)
