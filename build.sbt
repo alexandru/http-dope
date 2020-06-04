@@ -1,3 +1,4 @@
+import com.typesafe.sbt.packager.docker.{Cmd, CmdLike}
 
 val Http4sVersion = "0.21.4"
 val CirceVersion = "0.13.0"
@@ -21,6 +22,7 @@ lazy val root = (project in file("."))
   .enablePlugins(DockerPlugin)
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(GitVersioning)
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     organization := "org.alexn",
     name := "http-dope",
@@ -61,6 +63,9 @@ lazy val root = (project in file("."))
     addCompilerPlugin("com.olegpy"      %% "better-monadic-for" % "0.3.1"),
     addCompilerPlugin("com.github.ghik" %  "silencer-plugin"    % SilencerVersion cross CrossVersion.full),
 
+    buildInfoKeys := Seq[BuildInfoKey](version),
+    buildInfoPackage := "dope.generated",
+
     // Avoids classloader issues
     fork := true,
 
@@ -79,11 +84,32 @@ lazy val root = (project in file("."))
     dockerRepository := Some("http-dope"),
     dockerAlias := DockerAlias(None, dockerUsername.value, (packageName in Docker).value, git.gitDescribedVersion.value),
 
+    dockerCommands := {
+      val (list, wasAdded) = dockerCommands.value.foldLeft((Vector.empty[CmdLike], false)) {
+        case ((list, wasAdded), cmd) =>
+          cmd match {
+            case Cmd("USER", "root") if !wasAdded =>
+              list.last match {
+                case Cmd("FROM", _, _, "mainstage", _*) =>
+                  (list :+ cmd :+ Cmd("RUN", "apk --update add bind-tools"), true)
+                case _ =>
+                  (list :+ cmd, wasAdded)
+              }
+            case _ =>
+              (list :+ cmd, wasAdded)
+          }
+      }
+      if (!wasAdded) {
+        throw new IllegalStateException("Docker config: sbt-native-packager changed, cannot install tools!")
+      }
+      list
+    },
+
     // Twirl template settings
     sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
     TwirlKeys.templateImports ++= Seq(
-      "httpdope.config._",
-      "httpdope.static.html._"
+      "dope.config._",
+      "dope.static.html._"
     ),
 
     // --------------------

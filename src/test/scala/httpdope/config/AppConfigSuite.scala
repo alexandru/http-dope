@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package httpdope
+package dope
 package config
 
-import httpdope.common.utils.{CacheEvictionPolicy, SystemCommandsConfig}
+import dope.common.utils.{CacheEvictionPolicy, SystemCommandsConfig}
 import monix.eval.Task
-import httpdope.echo._
-import httpdope.vimeo.models.{VimeoAccessToken, VimeoCacheEvictionPolicy, VimeoConfig}
+import dope.echo._
+import dope.vimeo.models.{VimeoAccessToken, VimeoCacheEvictionPolicy, VimeoConfig}
 
 import scala.concurrent.duration._
 

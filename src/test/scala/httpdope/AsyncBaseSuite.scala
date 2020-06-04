@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package httpdope
+package dope
 
 import cats.effect.{ConcurrentEffect, IO, Resource}
 import monix.eval.Task

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package httpdope
+package dope
 package common.utils
 
 import monix.eval.Task

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package httpdope
+package dope
 package echo
 
 import cats.effect.Resource
-import httpdope.common.models.IP
+import dope.common.models.IP
 import monix.eval.Task
-import httpdope.config.AppConfig
+import dope.config.AppConfig
 
 class MaxmindGeoIPServiceSuite extends AsyncBaseSuite.OfTask {
 
