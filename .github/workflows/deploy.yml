@@ -34,9 +34,9 @@ jobs:
     - name: Login to Docker
       run: sudo docker login --username=$DOCKER_USER  --password=$DOCKER_PASS
 
-    - name: Compile
+    - name: Package
       run: |
-        make clean build
+        sudo make package
 
     - name: Publish Docker
       run: |

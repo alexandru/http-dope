@@ -7,19 +7,16 @@ SBT    := ./scripts/sbt -java-home "$${JAVA_HOME}"
 clean:
 	${SBT} clean
 
-build:
-	${SBT} update stage
-
-test: build
+test:
 	${SBT} test
 
 refresh-db:
 	./scripts/refresh-maxmind-db.sh
 
-publish-local: build
-	${SBT} docker:publishLocal
+package:
+	${SBT} clean update stage docker:publishLocal
 	docker tag "${LATEST}" "${IMG}"
 
-push: publish-local
+push: package
 	docker push "${LATEST}"
 	docker push "${IMG}"

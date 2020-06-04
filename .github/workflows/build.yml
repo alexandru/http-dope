@@ -5,6 +5,9 @@ jobs:
   build:
     runs-on: ubuntu-20.04
 
+    env:
+      DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
+
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-java@v1
@@ -22,11 +25,7 @@ jobs:
       - name: Download Maxmind DB
         run: |
           ./scripts/refresh-maxmind-db.sh
-        env:
-          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
 
       - name: Test
         run: |
           make test
-        env:
-          DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
