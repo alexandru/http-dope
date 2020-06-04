@@ -71,7 +71,7 @@ lazy val root = (project in file("."))
     herokuAppName in Compile := "http-dope",
     herokuJdkVersion in Compile := "11",
 
-    dockerBaseImage := "adoptopenjdk/openjdk11:alpine-slim" ,
+    dockerBaseImage := "adoptopenjdk/openjdk11-openj9:alpine-slim" ,
     packageName in Docker := "http-dope",
 
     dockerUpdateLatest := true,
