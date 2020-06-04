@@ -17,10 +17,12 @@
 package httpdope.common.utils
 
 import java.io.{BufferedReader, InputStreamReader}
+
 import cats.effect.{Blocker, Concurrent, ContextShift, Resource, Sync}
 import cats.implicits._
-import httpdope.common.models.IP
+import httpdope.common.models.{IP, IPType}
 import httpdope.common.utils.CacheManager.Cache
+
 import scala.util.control.NonFatal
 
 final case class SystemCommandsConfig(
@@ -31,12 +33,20 @@ final class SystemCommands[F[_]] private (cache: Cache[F, String, Option[String]
   (implicit F: Sync[F], cs: ContextShift[F])
   extends StrictLogging {
 
-  /**
-    * Task for getting the server's IP.
-    */
-  val getServerIP: F[Option[IP]] = {
-    executeCommand("dig +short myip.opendns.com @resolver1.opendns.com")
-      .map(_.map(IP(_)))
+  def getServerIP(kind: IPType): F[Option[IP]] =
+    kind match {
+      case IPType.V4 => getServerIPv4
+      case IPType.V6 => getServerIPv6
+    }
+
+  private val getServerIPv4: F[Option[IP]] = {
+    executeCommand("dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com")
+      .map(_.map(s => IP(s.replaceAll("\"", ""))))
+  }
+
+  private val getServerIPv6: F[Option[IP]] = {
+    executeCommand("dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com")
+      .map(_.map(s => IP(s.replaceAll("\"", ""))))
   }
 
   /**

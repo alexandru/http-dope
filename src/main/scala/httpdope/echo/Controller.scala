@@ -19,7 +19,7 @@ package httpdope.echo
 import cats.effect.{Sync, Timer}
 import cats.implicits._
 import httpdope.common.http.{BaseController, HttpUtils}
-import httpdope.common.models.IP
+import httpdope.common.models.{IP, IPType}
 import httpdope.common.utils.SystemCommands
 import org.http4s.{HttpRoutes, Request, Response}
 
@@ -46,8 +46,8 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
       case request @ GET -> Root / "geoip" =>
         getGeoIP(request).map(cachePolicy)
 
-      case GET -> Root / "server" =>
-        getServer.map(cachePolicy)
+      case request @ GET -> Root / "server" =>
+        getServer(request).map(cachePolicy)
 
       case GET -> Root / "timeout" / Duration(d, unit)  =>
         val timespan = FiniteDuration(d, unit)
@@ -80,7 +80,7 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
       val clientIP = extractIPFromRequest(request)
       for {
         clientGeoIP <- clientIP.fold(geoIPEmptyResult)(findGeoIP)
-        serverIP    <- system.getServerIP
+        serverIP    <- system.getServerIP(clientIP.fold(IPType.V4 : IPType)(IPType(_)))
         serverGeoIP <- serverIP.fold(geoIPEmptyResult)(findGeoIP)
         response <- buildInfo(request, clientGeoIP, serverIP, serverGeoIP)
       } yield {
@@ -107,8 +107,8 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
     }
   }
 
-  def getServer: F[Response[F]] =
-    system.getServerIP.flatMap {
+  def getServer(r: Request[F]): F[Response[F]] =
+    system.getServerIP(IPType(IPUtils.extractClientIP(r))).flatMap {
       case None =>
         notFound("server-ip", None)
       case ipOpt @ Some(ip) =>
