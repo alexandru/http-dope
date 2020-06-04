@@ -8,6 +8,15 @@ DIR="$(
 )"
 cd "$DIR"
 
+if [ -z "$GITHUB_TOKEN" ]; then
+  echo "ERROR: GITHUB_TOKEN is not set!" >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v github-release)" ]; then
+  brew install github-release
+fi
+
 if [ -z "$(git status --untracked-files=no --porcelain)" ]; then
     if [ $(git reflog HEAD | grep 'checkout:' | head -1 | awk '{print $NF}') == master ]; then
           git pull
@@ -30,3 +39,9 @@ else
   >&2 echo
   exit 1
 fi
+
+github-release release \
+    --user alexandru \
+    --repo http-dope \
+    --tag "$TAG" \
+    --name "$TAG" 
