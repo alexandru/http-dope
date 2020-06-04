@@ -36,7 +36,7 @@ jobs:
 
     - name: Compile
       run: |
-        sudo make clean build
+        make clean build
 
     - name: Publish Docker
       run: |
