@@ -31,13 +31,7 @@ jobs:
 
     - name: Compile and publish Docker image
       run: |
-        sudo make clean publish-local
+        sudo make clean push
       env:
         DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
-        GIT_TAG: ${{ github.ref }}
-
-    - name: Push Docker Image
-      run: |
-        sudo make push
-      env:
         GIT_TAG: ${{ github.ref }}
