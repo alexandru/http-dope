@@ -87,14 +87,9 @@ lazy val root = (project in file("."))
     dockerCommands := {
       val (list, wasAdded) = dockerCommands.value.foldLeft((Vector.empty[CmdLike], false)) {
         case ((list, wasAdded), cmd) =>
-          cmd match {
-            case Cmd("USER", "root") if !wasAdded =>
-              list.last match {
-                case Cmd("FROM", _, _, "mainstage", _*) =>
-                  (list :+ cmd :+ Cmd("RUN", "apk --update add bind-tools"), true)
-                case _ =>
-                  (list :+ cmd, wasAdded)
-              }
+          (list.lastOption, cmd) match {
+            case (Some(Cmd("FROM", _, _, "mainstage", _*)), Cmd("USER", "root")) if !wasAdded =>
+              (list :+ cmd :+ Cmd("RUN", "apk --update add bind-tools"), true)
             case _ =>
               (list :+ cmd, wasAdded)
           }
