@@ -19,19 +19,16 @@ package dope.vimeo
 import cats.data.EitherT
 import cats.effect.{Concurrent, Resource, Sync}
 import cats.implicits._
-import dope.vimeo.models.CacheTTL
-import dope.vimeo.models.CacheTTL.{LongTerm, NoCache, ShortTerm}
 import dope.common.http.{BaseController, ControllerLike, StaticController}
-import dope.common.models.{HttpError, IP, IPType, JSONError, WebError}
+import dope.common.models.{HttpError, JSONError, WebError}
 import dope.common.utils.{CacheManager, SystemCommands}
 import dope.vimeo.models.CacheTTL.{LongTerm, NoCache, ShortTerm}
-import dope.vimeo.models.{CacheTTL, DownloadLinksJSON, PicturesEntrySizeJSON, VimeoConfig, VimeoConfigJSON}
+import dope.vimeo.models._
 import io.circe.Encoder
 import io.circe.syntax._
 import org.http4s.client.Client
 import org.http4s.util.CaseInsensitiveString
-import org.http4s.{Header, HttpRoutes, Request, Response, Status}
-
+import org.http4s._
 import scala.concurrent.duration._
 
 final class Controller[F[_]](client: VimeoClient[F], system: SystemCommands[F])
@@ -141,7 +138,7 @@ final class Controller[F[_]](client: VimeoClient[F], system: SystemCommands[F])
   private def find[T](request: Request[F], f: T => F[Response[F]])
     (generate: (Option[UserAgent], Option[ForwardedFor]) => EitherT[F, WebError, T]): F[Response[F]] = {
 
-    system.getServerIP(IPType(request.remoteAddr.map(IP(_)))).flatMap { serverIP =>
+    system.getServerIP.flatMap { serverIP =>
       val agent = request.headers.get(CaseInsensitiveString("User-Agent"))
       val currentForwardedFor =
         request.headers

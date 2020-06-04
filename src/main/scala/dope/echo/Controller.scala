@@ -19,9 +19,8 @@ package dope.echo
 import cats.NonEmptyParallel
 import cats.effect.{Sync, Timer}
 import cats.implicits._
-import dope.common.models.IPType.{V4, V6}
 import dope.common.http.{BaseController, HttpUtils}
-import dope.common.models.{IP, IPType}
+import dope.common.models.IP
 import dope.common.utils.SystemCommands
 import dope.generated.BuildInfo
 import org.http4s.{HttpRoutes, Request, Response}
@@ -64,8 +63,6 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
       clientGeoIP: Option[GeoIPInfo],
       serverIPv4: Option[IP],
       serverGeoIPv4: Option[GeoIPInfo],
-      serverIPv6: Option[IP],
-      serverGeoIPv6: Option[GeoIPInfo],
     ): F[Response[F]] = {
       val headers = {
         val list = request.headers.toList.map { h => (h.name.value, h.value) }
@@ -82,8 +79,7 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
         ),
         clientGeoIP = clientGeoIP,
         server = ServerInfo(
-          ipv4 = serverIPv4.map(value => ServerIPInfo(value, serverGeoIPv4)),
-          ipv6 = serverIPv6.map(value => ServerIPInfo(value, serverGeoIPv6)),
+          ip = serverIPv4.map(value => ServerIPInfo(value, serverGeoIPv4)),
           buildVersion = BuildInfo.version,
           startedAt = system.startedAtRealTime,
         )
@@ -94,11 +90,9 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
       val clientIP = extractIPFromRequest(request)
       for {
         clientGeoIP   <- clientIP.fold(geoIPEmptyResult)(findGeoIP)
-        serverIPv4    <- system.getServerIP(V4)
-        serverGeoIPv4 <- serverIPv4.fold(geoIPEmptyResult)(findGeoIP)
-        serverIPv6    <- system.getServerIP(V6)
-        serverGeoIPv6 <- serverIPv6.fold(geoIPEmptyResult)(findGeoIP)
-        response      <- buildInfo(request, clientGeoIP, serverIPv4, serverGeoIPv4, serverIPv6, serverGeoIPv6)
+        serverIP      <- system.getServerIP
+        serverGeoIP   <- serverIP.fold(geoIPEmptyResult)(findGeoIP)
+        response      <- buildInfo(request, clientGeoIP, serverIP, serverGeoIP)
       } yield {
         response
       }
@@ -123,14 +117,10 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
     }
   }
 
-  def getServer: F[Response[F]] = {
-    val ipv4 = system.getServerIP(IPType.V4).flatMap(findGeoIPTuple)
-    val ipv6 = system.getServerIP(IPType.V4).flatMap(findGeoIPTuple)
-
-    (ipv4, ipv6).parTupled.flatMap { case (ipv4, ipv6) =>
-      Ok(ServerInfo(ipv4, ipv6, BuildInfo.version, system.startedAtRealTime))
+  def getServer: F[Response[F]] =
+    system.getServerIP.flatMap(findGeoIPTuple).flatMap { ip =>
+      Ok(ServerInfo(ip, BuildInfo.version, system.startedAtRealTime))
     }
-  }
 
   def simulateTimeout(ts: FiniteDuration): F[Response[F]] = {
     for {

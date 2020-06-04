@@ -39,8 +39,7 @@ final case class ParsedRequest(
 
 @JsonCodec
 final case class ServerInfo(
-  ipv4: Option[ServerIPInfo],
-  ipv6: Option[ServerIPInfo],
+  ip: Option[ServerIPInfo],
   buildVersion: String,
   startedAt: OffsetDateTime
 )
