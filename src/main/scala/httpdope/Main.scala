@@ -69,7 +69,7 @@ object Server extends LazyLogging {
       _ <- Stream.eval(F.delay {
         logger.info(s"Starting server at ${config.httpServer.address.value}:${config.httpServer.port.value}")
       })
-      exitCode <- BlazeServerBuilder[F]
+      exitCode <- BlazeServerBuilder[F](global)
         .bindHttp(config.httpServer.port.value, config.httpServer.address.value)
         .withHttpApp(finalHttpApp)
         .serve
