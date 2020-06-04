@@ -13,6 +13,12 @@ jobs:
           java-package: jdk
           architecture: x64
 
+      - name: Cache SBT
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier
+          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/build.sbt') }}        
+  
       - name: Download Maxmind DB
         run: |
           ./scripts/refresh-maxmind-db.sh

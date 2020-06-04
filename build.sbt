@@ -1,12 +1,12 @@
 
-val Http4sVersion = "0.21.2"
+val Http4sVersion = "0.21.4"
 val CirceVersion = "0.13.0"
 val LogbackVersion = "1.2.3"
-val MonixVersion = "3.1.0"
+val MonixVersion = "3.2.1"
 val TypesafeConfigVersion = "1.4.0"
-val NewtypeVersion = "0.4.3"
-val ScalaTestVersion = "3.1.1"
-val SilencerVersion = "1.6.0"
+val NewtypeVersion = "0.4.4"
+val ScalaTestVersion = "3.1.2"
+val SilencerVersion = "1.7.0"
 val GeoIP2Version = "2.13.1"
 val CommonsCompressVersion = "1.20"
 val EHCacheVersion = "3.8.1"
@@ -23,7 +23,7 @@ lazy val root = (project in file("."))
   .settings(
     organization := "org.alexn",
     name := "http-dope",
-    scalaVersion := "2.13.1",
+    scalaVersion := "2.13.2",
 
     scalacOptions ++= Seq(
       // Replaces macro-paradise
@@ -73,7 +73,7 @@ lazy val root = (project in file("."))
     dockerBaseImage := "adoptopenjdk/openjdk11" ,
     packageName in Docker := "http-dope",
 
-    dockerUpdateLatest := false,
+    dockerUpdateLatest := true,
     dockerUsername := Some("alexelcu"),
     dockerRepository := Some("http-dope"),
     dockerAlias := DockerAlias(None, dockerUsername.value, (packageName in Docker).value, git.gitDescribedVersion.value),
