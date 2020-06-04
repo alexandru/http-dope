@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@master
@@ -17,8 +17,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
-          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/build.sbt') }}        
-  
+          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/build.sbt') }}
+
       - name: Download Maxmind DB
         run: |
           ./scripts/refresh-maxmind-db.sh
