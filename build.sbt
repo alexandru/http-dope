@@ -19,6 +19,7 @@ lazy val root = (project in file("."))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(SbtTwirl)
   .enablePlugins(DockerPlugin)
+  .enablePlugins(AshScriptPlugin)
   .enablePlugins(GitVersioning)
   .settings(
     organization := "org.alexn",
@@ -70,7 +71,7 @@ lazy val root = (project in file("."))
     herokuAppName in Compile := "http-dope",
     herokuJdkVersion in Compile := "11",
 
-    dockerBaseImage := "adoptopenjdk/openjdk11" ,
+    dockerBaseImage := "adoptopenjdk/openjdk11:alpine-slim" ,
     packageName in Docker := "http-dope",
 
     dockerUpdateLatest := true,

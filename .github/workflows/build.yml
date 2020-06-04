@@ -7,11 +7,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-java@v1
+      - uses: olafurpg/setup-scala@v5
         with:
-          java-version: '11'
-          java-package: jdk
-          architecture: x64
+          java-version: adopt@1.11
 
       - name: Cache SBT
         uses: actions/cache@v2
@@ -27,6 +25,6 @@ jobs:
 
       - name: Test
         run: |
-          sbt test
+          make test
         env:
           DOPE_MAXMIND_GEOIP_API_KEY: ${{ secrets.DOPE_MAXMIND_GEOIP_API_KEY }}
