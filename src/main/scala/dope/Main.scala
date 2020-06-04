@@ -16,7 +16,6 @@
 
 package dope
 
-import cats.NonEmptyParallel
 import cats.effect.{Clock, ConcurrentEffect, ContextShift, ExitCode, Timer}
 import cats.implicits._
 import dope.common.http.{CORSMiddleware, CanonicalRedirectMiddleware, HttpsRedirectMiddleware}
@@ -34,7 +33,7 @@ import org.http4s.server.middleware.{AutoSlash, Logger}
 
 object Server extends LazyLogging {
 
-  def stream[F[_]](implicit F: ConcurrentEffect[F], PF: NonEmptyParallel[F], timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
+  def stream[F[_]](implicit F: ConcurrentEffect[F], timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
     implicit val clock: Clock[F] = timer.clock
 
     val stream = for {

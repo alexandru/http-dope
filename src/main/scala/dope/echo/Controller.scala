@@ -16,7 +16,6 @@
 
 package dope.echo
 
-import cats.NonEmptyParallel
 import cats.effect.{Sync, Timer}
 import cats.implicits._
 import dope.common.http.{BaseController, HttpUtils}
@@ -29,7 +28,7 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 
 final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
-  (implicit F: Sync[F], NP: NonEmptyParallel[F], timer: Timer[F])
+  (implicit F: Sync[F], timer: Timer[F])
   extends BaseController[F] {
 
   def routes: HttpRoutes[F] = {
@@ -157,7 +156,7 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
 
 object Controller {
   /** Builder. */
-  def apply[F[_] : Sync : NonEmptyParallel](
+  def apply[F[_] : Sync](
     geoIP: Option[MaxmindGeoIPService[F]],
     system: SystemCommands[F])
     (implicit timer: Timer[F]): Controller[F] = {
