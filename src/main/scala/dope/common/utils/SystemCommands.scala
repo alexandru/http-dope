@@ -19,12 +19,10 @@ package dope.common.utils
 import java.io.{BufferedReader, InputStreamReader}
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.concurrent.TimeUnit
-
 import cats.effect.{Blocker, Clock, Concurrent, ContextShift, Resource, Sync}
 import cats.implicits._
-import dope.common.models.IP
+import dope.common.models.{IP, IPType}
 import dope.common.utils.CacheManager.Cache
-
 import scala.util.control.NonFatal
 
 final case class SystemCommandsConfig(
@@ -40,9 +38,20 @@ final class SystemCommands[F[_]] private (
   cs: ContextShift[F],
 ) extends StrictLogging {
 
-  val getServerIP: F[Option[IP]] = {
-    executeCommand("dig +short myip.opendns.com @resolver1.opendns.com")
+  def getServerIP(kind: IPType): F[Option[IP]] =
+    kind match {
+      case IPType.V4 => getServerIPv4
+      case IPType.V6 => getServerIPv6
+    }
+
+  private val getServerIPv4: F[Option[IP]] = {
+    executeCommand("dig -4 +short myip.opendns.com @resolver1.opendns.com")
       .map(_.map(IP(_)))
+  }
+
+  private val getServerIPv6: F[Option[IP]] = {
+    executeCommand("dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com")
+      .map(_.map(s => IP(s.replaceAll("\"", ""))))
   }
 
   /**

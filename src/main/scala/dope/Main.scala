@@ -16,7 +16,8 @@
 
 package dope
 
-import cats.effect.{Clock, ConcurrentEffect, ContextShift, ExitCode, Timer}
+import cats.Parallel
+import cats.effect.{Clock, ConcurrentEffect, ContextShift, ExitCode, Sync, Timer}
 import cats.implicits._
 import dope.common.http.{CORSMiddleware, CanonicalRedirectMiddleware, HttpsRedirectMiddleware}
 import dope.common.utils._
@@ -33,7 +34,7 @@ import org.http4s.server.middleware.{AutoSlash, Logger}
 
 object Server extends LazyLogging {
 
-  def stream[F[_]](implicit F: ConcurrentEffect[F], timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect: Parallel](implicit timer: Timer[F], cs: ContextShift[F], global: Scheduler): Stream[F, Nothing] = {
     implicit val clock: Clock[F] = timer.clock
 
     val stream = for {
@@ -43,7 +44,7 @@ object Server extends LazyLogging {
       httpClient = HTTPClient(blazeClient, blocker)
       geoIP <- config.maxmindGeoIP match {
         case None =>
-          Stream.eval(F.pure(None))
+          Stream.eval(None.pure[F])
         case Some(cfg) =>
           Stream.resource(echo.MaxmindGeoIPService(cfg, httpClient, blocker).map(Some(_)))
       }
@@ -68,7 +69,7 @@ object Server extends LazyLogging {
           .orNotFound
       )
 
-      _ <- Stream.eval(F.delay {
+      _ <- Stream.eval(Sync[F].delay {
         logger.info(s"Starting server at ${config.httpServer.address.value}:${config.httpServer.port.value}")
       })
       exitCode <- BlazeServerBuilder[F](global)

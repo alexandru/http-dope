@@ -16,10 +16,11 @@
 
 package dope.echo
 
+import cats.Parallel
 import cats.effect.{Sync, Timer}
 import cats.implicits._
 import dope.common.http.{BaseController, HttpUtils}
-import dope.common.models.IP
+import dope.common.models.{IP, IPType}
 import dope.common.utils.SystemCommands
 import dope.generated.BuildInfo
 import org.http4s.{HttpRoutes, Request, Response}
@@ -27,8 +28,8 @@ import org.http4s.{HttpRoutes, Request, Response}
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 
-final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
-  (implicit F: Sync[F], timer: Timer[F])
+final class Controller[F[_]: Sync: Parallel](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
+  (implicit timer: Timer[F])
   extends BaseController[F] {
 
   def routes: HttpRoutes[F] = {
@@ -60,8 +61,6 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
     def buildInfo(
       request: Request[F],
       clientGeoIP: Option[GeoIPInfo],
-      serverIPv4: Option[IP],
-      serverGeoIPv4: Option[GeoIPInfo],
     ): F[Response[F]] = {
       val headers = {
         val list = request.headers.toList.map { h => (h.name.value, h.value) }
@@ -76,22 +75,15 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
           agent = HttpUtils.getHeader(request, "User-Agent"),
           headers = headers,
         ),
-        clientGeoIP = clientGeoIP,
-        server = ServerInfo(
-          ip = serverIPv4.map(value => ServerIPInfo(value, serverGeoIPv4)),
-          buildVersion = BuildInfo.version,
-          startedAt = system.startedAtRealTime,
-        )
+        clientGeoIP = clientGeoIP
       ))
     }
 
-    F.suspend {
+    Sync[F].suspend {
       val clientIP = extractIPFromRequest(request)
       for {
-        clientGeoIP   <- clientIP.fold(geoIPEmptyResult)(findGeoIP)
-        serverIP      <- system.getServerIP
-        serverGeoIP   <- serverIP.fold(geoIPEmptyResult)(findGeoIP)
-        response      <- buildInfo(request, clientGeoIP, serverIP, serverGeoIP)
+        clientGeoIP <- clientIP.fold(geoIPEmptyResult)(findGeoIP)
+        response    <- buildInfo(request, clientGeoIP)
       } yield {
         response
       }
@@ -105,9 +97,9 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
     }
 
   def getGeoIP(request: Request[F]): F[Response[F]] = {
-    F.suspend {
+    Sync[F].suspend {
       val ip = extractIPFromRequest(request)
-      ip.fold(F.pure(Option.empty[GeoIPInfo]))(findGeoIP).flatMap {
+      ip.fold(Option.empty[GeoIPInfo].pure[F])(findGeoIP).flatMap {
         case None =>
           notFound("ip", ip)
         case Some(info) =>
@@ -116,10 +108,14 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
     }
   }
 
-  def getServer: F[Response[F]] =
-    system.getServerIP.flatMap(findGeoIPTuple).flatMap { ip =>
-      Ok(ServerInfo(ip, BuildInfo.version, system.startedAtRealTime))
+  def getServer: F[Response[F]] = {
+    val ipv4 = system.getServerIP(IPType.V4).flatMap(findGeoIPTuple)
+    val ipv6 = system.getServerIP(IPType.V6).flatMap(findGeoIPTuple)
+
+    (ipv4, ipv6).parTupled.flatMap { case (ipv4, ipv6) =>
+      Ok(ServerInfo(ipv4, ipv6, BuildInfo.version, system.startedAtRealTime))
     }
+  }
 
   def simulateTimeout(ts: FiniteDuration): F[Response[F]] = {
     for {
@@ -132,19 +128,19 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
 
   private def findGeoIPTuple(ip: Option[IP]): F[Option[ServerIPInfo]] =
     ip match {
-      case None => F.pure(None)
+      case None => Sync[F].pure(None)
       case Some(ip) => findGeoIP(ip).map(r => Some(ServerIPInfo(ip, r)))
     }
 
   private def findGeoIP(ip: IP): F[Option[GeoIPInfo]] = {
     geoIP match {
-      case None => F.pure(None)
+      case None => Sync[F].pure(None)
       case Some(s) => s.findIP(ip)
     }
   }
 
   private def geoIPEmptyResult: F[Option[GeoIPInfo]] = {
-    F.pure(Option.empty[GeoIPInfo])
+    Sync[F].pure(Option.empty[GeoIPInfo])
   }
 
   private def extractIPFromRequest(request: Request[F]): Option[IP] =
@@ -156,7 +152,7 @@ final class Controller[F[_]](geoIP: Option[MaxmindGeoIPService[F]], system: Syst
 
 object Controller {
   /** Builder. */
-  def apply[F[_] : Sync](
+  def apply[F[_] : Sync : Parallel](
     geoIP: Option[MaxmindGeoIPService[F]],
     system: SystemCommands[F])
     (implicit timer: Timer[F]): Controller[F] = {

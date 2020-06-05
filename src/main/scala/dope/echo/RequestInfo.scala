@@ -24,7 +24,6 @@ import io.circe.generic.JsonCodec
 @JsonCodec
 final case class RequestInfo(
   request: ParsedRequest,
-  server: ServerInfo,
   clientGeoIP: Option[GeoIPInfo],
 )
 
@@ -39,7 +38,8 @@ final case class ParsedRequest(
 
 @JsonCodec
 final case class ServerInfo(
-  ip: Option[ServerIPInfo],
+  ipv4: Option[ServerIPInfo],
+  ipv6: Option[ServerIPInfo],
   buildVersion: String,
   startedAt: OffsetDateTime
 )
