@@ -96,9 +96,9 @@ class AppConfigSuite extends AsyncBaseSuite.OfTask {
           },
           systemCommands = SystemCommandsConfig(
             cache = CacheEvictionPolicy(
-              heapItems = 100,
+              heapItems = 200,
               offHeapMB = None,
-              timeToLiveExpiration = Some(1.hour)
+              timeToLiveExpiration = Some(3.hours)
             )
           ),
           vimeo = VimeoConfig(
