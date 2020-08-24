@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
     // Disabling the unused import warning, as it's
     // too damn annoying
     scalacOptions --= Seq(
-      "-Wunused:imports",
+      "-Wunused:imports",`
       "-Ywarn-unused:imports",
       "-Ywarn-unused-import",
     ),
