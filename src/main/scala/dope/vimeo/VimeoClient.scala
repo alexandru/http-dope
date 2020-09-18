@@ -98,13 +98,13 @@ final class VimeoClient[F[_]] private (
         .putHeaders(extra.collect { case Some(h) => h } :_*)
 
       logger.info("Making request: " + request.toString())
-      client.fetch(request) {
+      client.run(request).use {
         case Status.Successful(r) if r.status.code == 200 =>
           r.attemptAs[A].leftMap(e => JSONError(e.message) : WebError).value
 
         case r =>
           val contentType = r.headers.get(CaseInsensitiveString("Content-Type")).map(_.value)
-          val process = r.bodyAsText
+          val process = r.bodyText
             .compile
             .fold(new StringBuilder)((acc, e) => acc.append(e))
             .map(_.toString())

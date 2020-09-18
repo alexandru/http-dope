@@ -17,5 +17,7 @@ project/metals.sbt
 .metals
 site/Gemfile.lock
 .bloop
-
+.vscode
+project/project
 src/main/resources/maxmind.mmdb.gz
+

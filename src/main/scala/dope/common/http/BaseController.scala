@@ -64,6 +64,9 @@ abstract class BaseController[F[_] : Sync] extends BaseController.InstancesLevel
       "status" -> Json.fromString("internal-server-error"),
       "reason" -> Encoder[A].apply(reason)
     ))
+
+  protected implicit val textEntityEncoderForString = 
+    EntityEncoder.showEncoder[F, String]
 }
 
 object BaseController {

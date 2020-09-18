@@ -1,16 +1,16 @@
 import com.typesafe.sbt.packager.docker.{Cmd, CmdLike}
 
-val Http4sVersion = "0.21.4"
+val Http4sVersion = "0.21.7"
 val CirceVersion = "0.13.0"
 val LogbackVersion = "1.2.3"
-val MonixVersion = "3.2.1"
+val MonixVersion = "3.2.2"
 val TypesafeConfigVersion = "1.4.0"
 val NewtypeVersion = "0.4.4"
-val ScalaTestVersion = "3.1.2"
-val SilencerVersion = "1.7.0"
-val GeoIP2Version = "2.13.1"
+val ScalaTestVersion = "3.2.2"
+val SilencerVersion = "1.7.1"
+val GeoIP2Version = "2.14.0"
 val CommonsCompressVersion = "1.20"
-val EHCacheVersion = "3.8.1"
+val EHCacheVersion = "3.9.0"
 
 // Used below for parsing versions, specified via git tags
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
@@ -26,7 +26,7 @@ lazy val root = (project in file("."))
   .settings(
     organization := "org.alexn",
     name := "http-dope",
-    scalaVersion := "2.13.2",
+    scalaVersion := "2.13.3",
 
     scalacOptions ++= Seq(
       // Replaces macro-paradise
@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
     // Disabling the unused import warning, as it's
     // too damn annoying
     scalacOptions --= Seq(
-      "-Wunused:imports",`
+      "-Wunused:imports",
       "-Ywarn-unused:imports",
       "-Ywarn-unused-import",
     ),

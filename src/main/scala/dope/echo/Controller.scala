@@ -27,6 +27,7 @@ import org.http4s.{HttpRoutes, Request, Response}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
+import org.http4s.EntityEncoder
 
 final class Controller[F[_]: Sync: Parallel](geoIP: Option[MaxmindGeoIPService[F]], system: SystemCommands[F])
   (implicit timer: Timer[F])
@@ -41,9 +42,6 @@ final class Controller[F[_]: Sync: Parallel](geoIP: Option[MaxmindGeoIPService[F
 
       case request @ GET -> Root / "all" =>
         getAll(request).map(cachePolicy)
-
-      case request @ GET -> Root / "ip" =>
-        getIP(request).map(cachePolicy)
 
       case request @ GET -> Root / "geoip" =>
         getGeoIP(request).map(cachePolicy)
@@ -92,7 +90,7 @@ final class Controller[F[_]: Sync: Parallel](geoIP: Option[MaxmindGeoIPService[F
 
   def getIP(request: Request[F]): F[Response[F]] =
     IPUtils.extractClientIP(request) match {
-      case Some(ip) => Ok(ip)
+      case Some(ip) => Ok(ip.value)
       case None => NoContent()
     }
 
